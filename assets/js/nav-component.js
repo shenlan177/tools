@@ -362,6 +362,14 @@
                 path: "gomoku.html",
                 tag: "Games",
                 description: "经典双人对战五子棋游戏"
+            },
+            {
+                id: "solar-system",
+                name: "太阳系",
+                icon: "🌌",
+                path: "solar-system.html",
+                tag: "Education",
+                description: "太阳系行星公转演示动画"
             }
         ]
     };

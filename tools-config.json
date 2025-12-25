@@ -1,25 +1,33 @@
 {
-  "site": {
-    "name": "AI Tools Collection",
-    "icon": "🛠️",
-    "homeUrl": "/tools/"
-  },
-  "tools": [
-    {
-      "id": "text-diff",
-      "name": "文本比对",
-      "icon": "⚖️",
-      "path": "/tools/pages/tools/text-diff.html",
-      "tag": "Tools",
-      "description": "JSON/XML/SQL 格式化校验与差异对比"
+    "site": {
+        "name": "AI Tools Collection",
+        "icon": "🛠️",
+        "homeUrl": "/tools/"
     },
-    {
-      "id": "gomoku",
-      "name": "五子棋",
-      "icon": "⚫",
-      "path": "/tools/pages/tools/gomoku.html",
-      "tag": "Games",
-      "description": "经典双人对战五子棋游戏"
-    }
-  ]
+    "tools": [
+        {
+            "id": "text-diff",
+            "name": "文本比对",
+            "icon": "⚖️",
+            "path": "/tools/pages/tools/text-diff.html",
+            "tag": "Tools",
+            "description": "JSON/XML/SQL 格式化校验与差异对比"
+        },
+        {
+            "id": "gomoku",
+            "name": "五子棋",
+            "icon": "⚫",
+            "path": "/tools/pages/tools/gomoku.html",
+            "tag": "Games",
+            "description": "经典双人对战五子棋游戏"
+        },
+        {
+            "id": "solar-system",
+            "name": "太阳系",
+            "icon": "🌌",
+            "path": "/tools/pages/tools/solar-system.html",
+            "tag": "Education",
+            "description": "太阳系行星公转演示动画"
+        }
+    ]
 }

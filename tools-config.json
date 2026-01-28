@@ -28,6 +28,14 @@
             "path": "/tools/pages/tools/solar-system.html",
             "tag": "Education",
             "description": "太阳系行星公转演示动画"
+        },
+        {
+            "id": "math-worksheet",
+            "name": "数学练习生成器",
+            "icon": "🧮",
+            "path": "/tools/pages/tools/math_worksheet.html",
+            "tag": "Education",
+            "description": "自动生成小学数学口算和竖式练习题"
         }
     ]
 }

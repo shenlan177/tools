@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学数学口算/竖式练习生成器</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts (Noto Sans SC for Chinese) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f0f4f8;
+        }
+
+        /* Custom Print Styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background-color: white;
+            }
+
+            .page-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+
+            /* Ensure background graphics print */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .handwriting-font {
+            font-family: 'Courier New', Courier, monospace;
+            /* Fallback for handwriting feel */
+        }
+
+        /* Vertical Math Layout Helper */
+        .vertical-math {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-end;
+            font-size: 1.25rem;
+            line-height: 1.2;
+            width: 80px;
+        }
+
+        .vertical-operator {
+            position: absolute;
+            left: -15px;
+            bottom: 2px;
+        }
+
+        .vertical-line {
+            border-bottom: 2px solid #333;
+            width: 100%;
+            margin-top: 2px;
+            margin-bottom: 4px;
+        }
+
+        .answer-box {
+            border: 1px solid #ddd;
+            width: 100%;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ef4444;
+            /* Red for answers */
+            font-weight: bold;
+            visibility: hidden;
+            /* Hidden by default */
+        }
+
+        .answer-box.show {
+            visibility: visible;
+            border: none;
+        }
+
+        .oral-answer {
+            color: #ef4444;
+            font-weight: bold;
+            display: none;
+            margin-left: 5px;
+        }
+
+        .oral-answer.show {
+            display: inline;
+        }
+
+        /* Dashed Grid for Vertical Answers */
+        .grid-box {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .digit-box {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #fb923c;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: #ef4444;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+    <!-- Control Panel (No Print) -->
+    <div class="max-w-[210mm] mx-auto mb-6 bg-white p-6 rounded-xl shadow-lg no-print">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i data-lucide="settings" class="w-6 h-6 text-blue-500"></i>
+            生成设置
+        </h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">年级难度</label>
+                <select id="gradeLevel"
+                    class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="1">一年级 (20以内加减)</option>
+                    <option value="2">二年级 (100以内加减)</option>
+                    <option value="3" selected>三年级 (三位数加减)</option>
+                    <option value="4">四年级 (两位数乘除)</option>
+                    <option value="5">五年级 (混合运算)</option>
+                    <option value="6">六年级 (高难度整数)</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="showAnswersToggle" class="w-5 h-5 text-blue-600 rounded">
+                    <label for="showAnswersToggle" class="text-gray-700 font-medium">显示答案 (用于批改)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="generateWorksheet()"
+                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i> 生成题目
+            </button>
+            <button onclick="window.print()"
+                class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition flex items-center gap-2">
+                <i data-lucide="printer" class="w-5 h-5"></i> 打印试卷
+            </button>
+        </div>
+    </div>
+
+    <!-- Worksheet Paper (A4 Ratio) -->
+    <div id="worksheet"
+        class="page-container max-w-[210mm] min-h-[297mm] mx-auto bg-white shadow-2xl p-8 relative overflow-hidden">
+
+        <!-- Header Decoration -->
+        <div class="flex justify-between items-start mb-6 border-b-2 border-blue-400 pb-4">
+            <div class="flex items-center gap-4">
+                <!-- Badge -->
+                <div class="relative w-20 h-20 flex-shrink-0">
+                    <div
+                        class="absolute inset-0 bg-orange-400 rounded-full flex items-center justify-center transform -rotate-12 border-4 border-white shadow-sm text-white font-bold text-center leading-tight">
+                        <div>
+                            <div class="text-xs">每日</div>
+                            <div class="text-xl">练习</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Title -->
+                <div>
+                    <h1
+                        class="text-2xl font-bold text-white bg-orange-400 py-1 px-6 rounded-full inline-block shadow-sm">
+                        口算、竖式计算专项训练
+                    </h1>
+                    <div class="mt-2 text-blue-500 font-medium flex items-center gap-2">
+                        <span class="bg-blue-100 px-2 py-0.5 rounded text-sm text-blue-600">建议用时：10分钟</span>
+                        <span id="gradeDisplay" class="text-sm text-gray-500">难度：三年级</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Box -->
+            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 w-32">
+                <div class="flex justify-between text-xs text-gray-500 mb-2">
+                    <span>____月____日</span>
+                </div>
+                <div class="text-xs text-gray-500">
+                    实际用时: ____分
+                </div>
+                <div class="mt-2 border-t border-yellow-200 pt-1 text-right text-sm text-orange-500 font-bold">
+                    评分: ______
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Oral Calculation -->
+        <div class="mb-8">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="bg-blue-100 p-1.5 rounded-full">
+                    <span class="font-bold text-blue-500 text-lg w-6 h-6 flex items-center justify-center">1</span>
+                </div>
+                <h2 class="text-xl font-bold text-blue-500">口算</h2>
+                <div class="h-1 bg-blue-200 flex-grow rounded-full ml-2"></div>
+            </div>
+
+            <div id="oralContainer" class="grid grid-cols-4 gap-y-6 gap-x-4 text-lg font-medium text-gray-700">
+                <!-- JS will inject items here -->
+            </div>
+        </div>
+
+        <!-- Section 2: Vertical Calculation -->
+        <div class="mb-8">
+            <div class="flex items-center gap-2 mb-6">
+                <div class="bg-blue-100 p-1.5 rounded-full">
+                    <span class="font-bold text-blue-500 text-lg w-6 h-6 flex items-center justify-center">2</span>
+                </div>
+                <h2 class="text-xl font-bold text-blue-500">竖式计算</h2>
+                <div class="h-1 bg-blue-200 flex-grow rounded-full ml-2"></div>
+            </div>
+
+            <div id="verticalContainer" class="grid grid-cols-3 gap-y-10 gap-x-8">
+                <!-- JS will inject items here -->
+            </div>
+        </div>
+
+        <!-- Section 3: Challenge -->
+        <div class="mt-auto border-2 border-orange-300 rounded-2xl p-4 bg-white relative">
+            <div class="absolute -top-4 left-4 bg-white px-2">
+                <span class="text-orange-500 font-bold text-lg flex items-center gap-1">
+                    <i data-lucide="brain-circuit" class="w-5 h-5"></i> 挑战一下
+                </span>
+            </div>
+
+            <div class="mt-2 flex gap-4 items-start">
+                <div id="challengeText" class="flex-grow text-gray-700 font-medium leading-relaxed pt-2">
+                    <!-- Challenge text goes here -->
+                </div>
+                <div
+                    class="flex-shrink-0 w-24 h-24 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200">
+                    <img src="https://api.iconify.design/noto:owl.svg" alt="Mascot" class="w-16 h-16 opacity-80">
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // --- Logic ---
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getProblem(grade, type = 'oral') {
+            let num1, num2, operator, answer;
+            let operators = ['+', '-'];
+
+            // Grade based logic
+            if (grade == 1) {
+                // Grade 1: Add/Sub within 20, no complex carry if possible (simplified)
+                num1 = getRandomInt(1, 20);
+                num2 = getRandomInt(1, 20);
+                operator = operators[getRandomInt(0, 1)];
+            } else if (grade == 2) {
+                // Grade 2: Add/Sub within 100
+                num1 = getRandomInt(10, 99);
+                num2 = getRandomInt(1, 99);
+                operator = operators[getRandomInt(0, 1)];
+            } else if (grade == 3) {
+                // Grade 3: Add/Sub within 1000, simple Mult
+                if (Math.random() > 0.7 && type === 'oral') {
+                    // Simple multiplication table
+                    num1 = getRandomInt(2, 9);
+                    num2 = getRandomInt(2, 9);
+                    operator = '×';
+                } else {
+                    num1 = getRandomInt(100, 900);
+                    num2 = getRandomInt(10, 900);
+                    operator = operators[getRandomInt(0, 1)];
+                }
+            } else if (grade >= 4) {
+                // Grade 4+: Mult/Div involved
+                if (Math.random() > 0.5) {
+                    operator = Math.random() > 0.5 ? '×' : '÷';
+                    if (operator === '×') {
+                        num1 = getRandomInt(11, 50);
+                        num2 = getRandomInt(2, 9);
+                    } else {
+                        // Ensure clean division
+                        num2 = getRandomInt(2, 9);
+                        answer = getRandomInt(10, 50);
+                        num1 = num2 * answer;
+                        operator = '÷';
+                        return { num1, num2, operator, answer }; // Return early for div
+                    }
+                } else {
+                    num1 = getRandomInt(100, 999);
+                    num2 = getRandomInt(100, 999);
+                    operator = operators[getRandomInt(0, 1)];
+                }
+            }
+
+            // Logic to prevent negative results
+            if (operator === '-') {
+                if (num1 < num2) {
+                    [num1, num2] = [num2, num1];
+                }
+            }
+
+            // Calculate Answer
+            if (operator === '+') answer = num1 + num2;
+            else if (operator === '-') answer = num1 - num2;
+            else if (operator === '×') answer = num1 * num2;
+            else if (operator === '÷') answer = num1 / num2;
+
+            return { num1, num2, operator, answer };
+        }
+
+        function generateOralProblems(grade, count) {
+            const container = document.getElementById('oralContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const p = getProblem(grade, 'oral');
+
+                // Formatting for display
+                const div = document.createElement('div');
+                div.className = "flex items-center space-x-2";
+
+                // Add star icon
+                const star = `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-orange-400 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
+                div.innerHTML = `
+                    ${star}
+                    <span class="text-gray-700 tracking-wide">${p.num1} ${p.operator} ${p.num2} = </span>
+                    <span class="oral-answer">${p.answer}</span>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function generateVerticalProblems(grade, count) {
+            const container = document.getElementById('verticalContainer');
+            container.innerHTML = '';
+
+            // Adjust difficulty specifically for vertical (tend to be larger numbers for G2/G3)
+            let vGrade = grade;
+
+            for (let i = 0; i < count; i++) {
+                let p = getProblem(vGrade, 'vertical');
+                // Force + or - for vertical usually, unless grade 4+
+                if (grade <= 3 && (p.operator === '×' || p.operator === '÷')) {
+                    p = getProblem(vGrade, 'vertical'); // retry once
+                    if (p.operator === '×' || p.operator === '÷') {
+                        // Fallback to addition
+                        p.num1 = getRandomInt(100, 500);
+                        p.num2 = getRandomInt(100, 400);
+                        p.operator = '+';
+                        p.answer = p.num1 + p.num2;
+                    }
+                }
+
+                const div = document.createElement('div');
+                div.className = "flex flex-col items-center";
+
+                // Calculate padding for alignment
+                const topVal = p.num1.toString();
+                const botVal = p.num2.toString();
+                const resultVal = p.answer.toString();
+
+                // Create empty boxes for the answer
+                let boxesHtml = '';
+                for (let char of resultVal) {
+                    boxesHtml += `<div class="digit-box"><span class="oral-answer">${char}</span></div>`;
+                }
+
+                div.innerHTML = `
+                    <div class="relative inline-block text-right font-mono text-2xl tracking-widest text-gray-700">
+                        <div class="mr-1">${topVal}</div>
+                        <div class="relative mr-1">
+                            <span class="absolute -left-6 top-0">${p.operator}</span>
+                            ${botVal}
+                        </div>
+                        <div class="border-t-2 border-gray-600 mt-1 w-full min-w-[80px]"></div>
+                        <!-- Answer placeholder space -->
+                    </div>
+                    <div class="grid-box mt-2">
+                        ${boxesHtml}
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        const challenges = [
+            "加加在做加法题时，不小心把一个加数个位上的 2 看成了 3，那么结果会 (  )。<br>A. 变大 1 &nbsp;&nbsp; B. 变大 3 &nbsp;&nbsp; C. 变小 1",
+            "小明有 15 个苹果，分给小红 3 个后，两人苹果一样多。小红原来有 ( ) 个苹果。",
+            "找规律填数：1, 4, 9, 16, ( ), 36。",
+            "一根绳子对折再对折，每段长 5 米，这根绳子原来长 ( ) 米。",
+            "哥哥今年 12 岁，弟弟今年 8 岁。当哥哥 20 岁时，弟弟 ( ) 岁。"
+        ];
+
+        function generateChallenge() {
+            const container = document.getElementById('challengeText');
+            const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+            container.innerHTML = randomChallenge;
+        }
+
+        function generateWorksheet() {
+            const grade = parseInt(document.getElementById('gradeLevel').value);
+            const gradeNames = ["", "一年级", "二年级", "三年级", "四年级", "五年级", "六年级"];
+
+            document.getElementById('gradeDisplay').innerText = `难度：${gradeNames[grade]}`;
+
+            // 1. Oral: 16 problems
+            generateOralProblems(grade, 16);
+
+            // 2. Vertical: 6 problems
+            generateVerticalProblems(grade, 6);
+
+            // 3. Challenge
+            generateChallenge();
+
+            // Reset Answer Toggle
+            const toggle = document.getElementById('showAnswersToggle');
+            toggle.checked = false;
+            toggleAnswers();
+        }
+
+        function toggleAnswers() {
+            const show = document.getElementById('showAnswersToggle').checked;
+            const answers = document.querySelectorAll('.oral-answer');
+            answers.forEach(el => {
+                if (show) el.classList.add('show');
+                else el.classList.remove('show');
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('showAnswersToggle').addEventListener('change', toggleAnswers);
+
+        // Initial Generation
+        generateWorksheet();
+
+    </script>
+
+    <script src="../../assets/js/nav-component.js"></script>
+</body>
+
+</html>

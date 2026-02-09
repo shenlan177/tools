@@ -36,6 +36,14 @@
             "path": "/tools/pages/tools/math_worksheet.html",
             "tag": "Education",
             "description": "自动生成小学数学口算和竖式练习题"
+        },
+        {
+            "id": "pdf-reader",
+            "name": "双语数学阅读器",
+            "icon": "📚",
+            "path": "/tools/pages/tools/pdf-reader/index.html",
+            "tag": "Education",
+            "description": "Pre-Algebra 教材中英对照 AI 翻译阅读器"
         }
     ]
 }

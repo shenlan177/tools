@@ -44,6 +44,14 @@
             "path": "/tools/pages/tools/pdf-reader/index.html",
             "tag": "Education",
             "description": "Pre-Algebra 教材中英对照 AI 翻译阅读器"
+        },
+        {
+            "id": "mathnotes",
+            "name": "TSM 陪读笔记",
+            "icon": "📐",
+            "path": "/tools/pages/tools/mathnotes.html",
+            "tag": "Education",
+            "description": "可视化深度陪读笔记"
         }
     ]
 }

@@ -52,6 +52,14 @@
             "path": "/tools/pages/tools/mathnotes.html",
             "tag": "Education",
             "description": "可视化深度陪读笔记"
+        },
+        {
+            "id": "summer",
+            "name": "萌娃分布图",
+            "icon": "👶",
+            "path": "/tools/pages/tools/summer.html",
+            "tag": "Tools",
+            "description": "群内萌娃性别分布统计，人类幼崽观察报告。"
         }
     ]
 }

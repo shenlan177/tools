@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<script src="../../assets/js/nav-component.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>群内萌娃性别分布图</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .title-font {
+            font-family: 'ZCOOL KuaiLe', cursive;
+        }
+
+        /* 悲壮的背景条纹 */
+        .bg-tragic-stripes {
+            background: repeating-linear-gradient(45deg,
+                    #1e293b,
+                    #1e293b 10px,
+                    #233044 10px,
+                    #233044 20px);
+        }
+
+        /* 幸福的闪光背景 */
+        .bg-happy-glow {
+            background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bg-happy-glow::before {
+            content: "✨";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 100px;
+            opacity: 0.1;
+            transform: rotate(15deg);
+        }
+
+        /* 卡片悬浮效果 */
+        .hover-card:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8 min-h-screen flex flex-col items-center">
+
+    <header class="text-center mb-10 w-full max-w-6xl">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-3 title-font tracking-wide">👶 群萌娃性别分布大赏 👧</h1>
+        <p class="text-gray-500">（人类幼崽观察报告：有人负重前行，有人岁月静好）</p>
+    </header>
+
+    <div class="w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+
+        <!-- ================= 悲壮：双男娃专区 ================= -->
+        <div class="bg-tragic-stripes rounded-2xl p-6 shadow-2xl border-4 border-slate-700 relative overflow-hidden">
+            <div
+                class="absolute top-0 right-0 bg-red-600 text-white px-4 py-1 rounded-bl-xl font-bold text-sm shadow-lg">
+                高危区域 ⚠️
+            </div>
+
+            <h2 class="text-3xl font-bold text-white mb-2 flex items-center title-font">
+                <span class="text-4xl mr-2">⚔️</span> 双男娃阵营
+            </h2>
+            <p class="text-slate-300 italic mb-6 text-sm border-b border-slate-600 pb-4">
+                "每天都在拆家与劝架中度过，精力无限，嗓门震天。不仅费妈，还费钱（建设银行x2）。兄弟们，挺住！"
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- 笑笑 -->
+                <div class="bg-slate-700/80 rounded-xl p-4 border border-slate-600 hover-card">
+                    <div class="text-blue-300 font-bold text-lg mb-2 flex justify-between items-center">
+                        家长：笑笑
+                        <span class="text-xs bg-slate-800 px-2 py-1 rounded-full border border-blue-500/30">2套房预警</span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="bg-slate-800 rounded p-2 text-white flex items-center">
+                            <span class="text-xl mr-2">👦</span> 灯灯 <span
+                                class="text-xs text-slate-400 ml-auto">小学三年级</span>
+                        </div>
+                        <div class="bg-slate-800 rounded p-2 text-white flex items-center">
+                            <span class="text-xl mr-2">👦</span> 又又 <span
+                                class="text-xs text-slate-400 ml-auto">小学二年级</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 宣宣 -->
+                <div class="bg-slate-700/80 rounded-xl p-4 border border-slate-600 hover-card">
+                    <div class="text-blue-300 font-bold text-lg mb-2 flex justify-between items-center">
+                        家长：宣宣
+                        <span class="text-xs bg-slate-800 px-2 py-1 rounded-full border border-blue-500/30">武斗现场</span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="bg-slate-800 rounded p-2 text-white flex items-center">
+                            <span class="text-xl mr-2">👦</span> 大哥 <span
+                                class="text-xs text-slate-400 ml-auto">小学二年级</span>
+                        </div>
+                        <div class="bg-slate-800 rounded p-2 text-white flex items-center">
+                            <span class="text-xl mr-2">👦</span> 唯唯 <span
+                                class="text-xs text-slate-400 ml-auto">幼儿园小班</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 晓为 -->
+                <div class="bg-slate-700/80 rounded-xl p-4 border border-slate-600 hover-card">
+                    <div class="text-blue-300 font-bold text-lg mb-2 flex justify-between items-center">
+                        家长：晓为
+                        <span class="text-xs bg-slate-800 px-2 py-1 rounded-full border border-blue-500/30">永动机</span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="bg-slate-800 rounded p-2 text-white flex items-center">
+                            <span class="text-xl mr-2">👦</span> Lucas/Lulu <span
+                                class="text-xs text-slate-400 ml-auto">小学二年级</span>
+                        </div>
+                        <div class="bg-slate-800 rounded p-2 text-white flex items-center">
+                            <span class="text-xl mr-2">👦</span> Juju <span
+                                class="text-xs text-slate-400 ml-auto">无业游民</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 罗少 -->
+                <div class="bg-slate-700/80 rounded-xl p-4 border border-slate-600 hover-card">
+                    <div class="text-blue-300 font-bold text-lg mb-2 flex justify-between items-center">
+                        家长：罗少
+                        <span
+                            class="text-xs bg-slate-800 px-2 py-1 rounded-full border border-blue-500/30">建设银行VIP</span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="bg-slate-800 rounded p-2 text-white flex items-center">
+                            <span class="text-xl mr-2">👦</span> 小白白 <span
+                                class="text-xs text-slate-400 ml-auto">幼儿园大班</span>
+                        </div>
+                        <div class="bg-slate-800 rounded p-2 text-white flex items-center">
+                            <span class="text-xl mr-2">👦</span> 小小白 <span
+                                class="text-xs text-slate-400 ml-auto">无业游民</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 幸福：双女娃专区 ================= -->
+        <div class="bg-happy-glow rounded-2xl p-6 shadow-xl border-4 border-pink-200">
+            <div
+                class="absolute top-0 right-0 bg-pink-400 text-white px-4 py-1 rounded-bl-xl font-bold text-sm shadow-sm">
+                令人嫉妒 🌸
+            </div>
+
+            <h2 class="text-3xl font-bold text-pink-800 mb-2 flex items-center title-font">
+                <span class="text-4xl mr-2">🎀</span> 双女娃仙境
+            </h2>
+            <p class="text-pink-600 italic mb-6 text-sm border-b border-pink-200 pb-4">
+                "满屋子的洋娃娃、小裙子和发卡，空气都是甜甜的。两个贴心小棉袄，招商银行x2，岁月静好，人生赢家！"
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- 安夏 -->
+                <div class="bg-white/60 rounded-xl p-4 border border-pink-100 shadow-sm hover-card">
+                    <div class="text-pink-600 font-bold text-lg mb-2 flex justify-between items-center">
+                        家长：安夏
+                        <span class="text-xs bg-pink-100 text-pink-500 px-2 py-1 rounded-full">双倍甜度</span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="bg-white rounded p-2 text-gray-700 flex items-center border border-pink-50">
+                            <span class="text-xl mr-2">👧</span> 闪电 <span
+                                class="text-xs text-gray-400 ml-auto">小学四年级</span>
+                        </div>
+                        <div class="bg-white rounded p-2 text-gray-700 flex items-center border border-pink-50">
+                            <span class="text-xl mr-2">👧</span> 咚咚 <span
+                                class="text-xs text-gray-400 ml-auto">小学一年级</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 犹寒 -->
+                <div class="bg-white/60 rounded-xl p-4 border border-pink-100 shadow-sm hover-card">
+                    <div class="text-pink-600 font-bold text-lg mb-2 flex justify-between items-center">
+                        家长：犹寒
+                        <span class="text-xs bg-pink-100 text-pink-500 px-2 py-1 rounded-full">软糯香甜</span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="bg-white rounded p-2 text-gray-700 flex items-center border border-pink-50">
+                            <span class="text-xl mr-2">👧</span> 小金鱼 <span
+                                class="text-xs text-gray-400 ml-auto">小学一年级</span>
+                        </div>
+                        <div class="bg-white rounded p-2 text-gray-700 flex items-center border border-pink-50">
+                            <span class="text-xl mr-2">👧</span> 小月亮 <span
+                                class="text-xs text-gray-400 ml-auto">无业游民</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 可人 -->
+                <div class="bg-white/60 rounded-xl p-4 border border-pink-100 shadow-sm hover-card">
+                    <div class="text-pink-600 font-bold text-lg mb-2 flex justify-between items-center">
+                        家长：可人
+                        <span class="text-xs bg-pink-100 text-pink-500 px-2 py-1 rounded-full">贴心棉袄</span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="bg-white rounded p-2 text-gray-700 flex items-center border border-pink-50">
+                            <span class="text-xl mr-2">👧</span> 糖糖 <span
+                                class="text-xs text-gray-400 ml-auto">幼儿园大班</span>
+                        </div>
+                        <div class="bg-white rounded p-2 text-gray-700 flex items-center border border-pink-50">
+                            <span class="text-xl mr-2">👧</span> 多多 <span
+                                class="text-xs text-gray-400 ml-auto">无业游民</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 其他专区 ================= -->
+    <div class="w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+
+        <!-- 儿女双全 -->
+        <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 shadow-md border border-orange-100">
+            <h3 class="text-2xl font-bold text-orange-600 mb-4 flex items-center">
+                <span class="text-3xl mr-2">⚖️</span> 儿女双全 (人生大圆满)
+            </h3>
+            <div class="grid grid-cols-1 gap-4">
+                <div
+                    class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-orange-100 hover-card">
+                    <span class="font-bold text-gray-700 w-1/4">家长：小布</span>
+                    <div class="flex gap-4 w-3/4 justify-end">
+                        <span class="bg-pink-100 text-pink-700 px-3 py-1 rounded flex items-center"><span
+                                class="mr-1">👧</span> 小火球</span>
+                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded flex items-center"><span
+                                class="mr-1">👦</span> 小恐龙</span>
+                    </div>
+                </div>
+                <div
+                    class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-orange-100 hover-card">
+                    <span class="font-bold text-gray-700 w-1/4">家长：若羽</span>
+                    <div class="flex gap-4 w-3/4 justify-end">
+                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded flex items-center"><span
+                                class="mr-1">👦</span> 六六</span>
+                        <span class="bg-pink-100 text-pink-700 px-3 py-1 rounded flex items-center"><span
+                                class="mr-1">👧</span> 七七</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 单娃家庭 -->
+        <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
+            <h3 class="text-2xl font-bold text-green-600 mb-4 flex items-center">
+                <span class="text-3xl mr-2">🌱</span> 潜力股 (单娃区)
+            </h3>
+
+            <div class="flex flex-col gap-4">
+                <!-- 单男娃 -->
+                <div>
+                    <h4 class="text-sm text-gray-500 font-bold mb-2 border-b pb-1">单男娃 (单台碎钞机)</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <div class="bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg flex items-center text-sm">
+                            <span class="font-bold text-gray-700 mr-2">小暖:</span>可乐 👦</div>
+                        <div class="bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg flex items-center text-sm">
+                            <span class="font-bold text-gray-700 mr-2">小A:</span>狗子 👦</div>
+                        <div class="bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg flex items-center text-sm">
+                            <span class="font-bold text-gray-700 mr-2">君泽:</span>桔子 👦</div>
+                        <div class="bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg flex items-center text-sm">
+                            <span class="font-bold text-gray-700 mr-2">明落:</span>六一 👦</div>
+                    </div>
+                </div>
+                <!-- 单女娃 -->
+                <div>
+                    <h4 class="text-sm text-gray-500 font-bold mb-2 border-b pb-1">单女娃 (贴心小可爱)</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <div class="bg-pink-50 border border-pink-100 px-3 py-2 rounded-lg flex items-center text-sm">
+                            <span class="font-bold text-gray-700 mr-2">空林:</span>杨桃 👧</div>
+                        <div class="bg-pink-50 border border-pink-100 px-3 py-2 rounded-lg flex items-center text-sm">
+                            <span class="font-bold text-gray-700 mr-2">小无:</span>减减 👧</div>
+                        <div class="bg-pink-50 border border-pink-100 px-3 py-2 rounded-lg flex items-center text-sm">
+                            <span class="font-bold text-gray-700 mr-2">深蓝:</span>浮云 👧</div>
+                        <div class="bg-pink-50 border border-pink-100 px-3 py-2 rounded-lg flex items-center text-sm">
+                            <span class="font-bold text-gray-700 mr-2">Ang:</span>仔仔 👧</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

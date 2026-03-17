@@ -60,6 +60,14 @@
             "path": "/tools/pages/tools/summer.html",
             "tag": "Tools",
             "description": "群内萌娃性别分布统计，人类幼崽观察报告。"
+        },
+        {
+            "id": "matrix",
+            "name": "蚂蚁方阵",
+            "icon": "🧮",
+            "path": "/tools/pages/tools/matrix.html",
+            "tag": "Education",
+            "description": "线性代数的魔法实验室，可视互动沙盒游戏。"
         }
     ]
 }

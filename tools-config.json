@@ -68,6 +68,14 @@
             "path": "/tools/pages/tools/matrix.html",
             "tag": "Education",
             "description": "线性代数的魔法实验室，可视互动沙盒游戏。"
+        },
+        {
+            "id": "ai-math-human-thinking",
+            "name": "AI 时代的数学方法与人类思维",
+            "icon": "🧠",
+            "path": "/tools/pages/tools/AI 时代的数学方法与人类思维.html",
+            "tag": "Tools",
+            "description": "Terence Tao 与 Tanya Klowden 探讨 AI 对数学、智力产出及人类思维影响的深度论文。"
         }
     ]
 }

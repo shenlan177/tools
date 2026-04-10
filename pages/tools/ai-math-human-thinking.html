@@ -61,6 +61,16 @@
             pre { padding: 15px; font-size: 0.85em; }
         }
 
+        .footnote-inline {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            background-color: #f9f9f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            margin: 0 4px;
+        }
+
         @media print {
             body { background: white; margin: 0; padding: 0; }
             .content { box-shadow: none; padding: 0; }
@@ -318,8 +328,14 @@ AI 技术在世界范围内无组织、混乱且广泛的发布，已经以既�
 - [47] A. Weir (2022). **Chapter 11.** In *Project Hail Mary*.
 - [48] Y. Wu et al. (2022-12). **Autoformalization with Large Language Models.** *NeurIPS*.
 `;
+        // 优化：处理脚注标记 [^n] 和内联注释 （[^n]：...）
+        let processedMd = rawMd
+            .replace(/\[\^\d+\]（\[\^\d+\]：(.*?)）/g, '<span class="footnote-inline">注：$1</span>') // 处理 [^1]（[^1]：内容）
+            .replace(/（\[\^\d+\]：(.*?)）/g, '<span class="footnote-inline">注：$1</span>')       // 处理遗漏的 （[^1]：内容）
+            .replace(/\[\^\d+\]/g, '');                                                         // 清理剩余的独立 [^1]
+
         // Re-unescape dollar signs for MathJax to find them
-        const mdWithMath = rawMd.replace(/\\\$/g, '$');
+        const mdWithMath = processedMd.replace(/\\\$/g, '$');
         document.getElementById('render-target').innerHTML = marked.parse(mdWithMath);
         window.MathJax = {
           tex: {

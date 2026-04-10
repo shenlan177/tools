@@ -42,6 +42,25 @@
         pre { background: #2c3e50; color: #ecf0f1; padding: 20px; border-radius: 8px; overflow-x: auto; }
         .footnote { font-size: 0.85em; color: #7f8c8d; border-top: 1px solid #eee; margin-top: 40px; padding-top: 20px; text-align: left; }
         hr { border: 0; height: 1px; background: #eee; margin: 40px 0; }
+        
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            body {
+                margin: 0;
+                padding: 10px;
+                background-color: #fff;
+            }
+            .content {
+                padding: 30px 20px;
+                box-shadow: none;
+                border-radius: 0;
+            }
+            h1 { font-size: 1.8em; margin-bottom: 25px; }
+            h2 { font-size: 1.4em; border-left-width: 4px; }
+            h3 { font-size: 1.2em; }
+            pre { padding: 15px; font-size: 0.85em; }
+        }
+
         @media print {
             body { background: white; margin: 0; padding: 0; }
             .content { box-shadow: none; padding: 0; }

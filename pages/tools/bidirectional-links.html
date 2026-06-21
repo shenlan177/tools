@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<script src="../../assets/js/nav-component.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双链的力量 — Obsidian 双向链接可视化</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f9fb;
+            --bg-card: #ffffff;
+            --bg-alt: #f1f3f6;
+            --text-primary: #1a1a2e;
+            --text-secondary: #5a5d6e;
+            --text-muted: #9094a6;
+            --border: #e2e4e9;
+            --border-light: #eef0f3;
+            --accent: #4f46e5;
+            --accent-light: #eef2ff;
+            --accent2: #059669;
+            --accent2-light: #ecfdf5;
+            --accent3: #d97706;
+            --accent3-light: #fffbeb;
+            --red: #dc2626;
+            --red-light: #fef2f2;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.04);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 1040px; margin: 0 auto; padding: 0 28px; }
+
+        /* Hero */
+        .hero {
+            padding: 88px 28px 72px;
+            text-align: center;
+        }
+        .hero .kicker {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 6px 16px;
+            border-radius: 100px;
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            color: #0f0f23;
+        }
+        .hero h1 span { color: var(--accent); }
+        .hero .lead {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 620px;
+            margin: 0 auto 36px;
+        }
+        .hero .stat-row {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+        .hero .stat {
+            text-align: center;
+        }
+        .hero .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+        .hero .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Sections */
+        section { padding: 72px 0; }
+        section.alt { background: var(--bg-alt); }
+        .section-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+            color: #0f0f23;
+        }
+        .section-desc {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 600px;
+            margin-bottom: 48px;
+        }
+
+        /* Graph Demo */
+        .graph-demo {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 48px;
+            display: flex;
+            align-items: center;
+            gap: 48px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .graph-svg { flex-shrink: 0; }
+        .graph-legend { max-width: 320px; }
+        .graph-legend h4 { font-weight: 600; margin-bottom: 12px; }
+        .graph-legend .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .legend-dot.diary { background: var(--accent); }
+        .legend-dot.person { background: var(--accent2); }
+        .legend-dot.place { background: var(--accent3); }
+
+        /* SVG animation keyframes */
+        @keyframes drawLine {
+            from { stroke-dashoffset: var(--line-len); }
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes fadeInNode {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulse {
+            0%, 100% { r: 18; opacity: 0.15; }
+            50% { r: 24; opacity: 0.05; }
+        }
+        @keyframes linkPulse {
+            0%, 100% { stroke-opacity: 0.3; }
+            50% { stroke-opacity: 0.8; }
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+        }
+        .card-icon.purple { background: var(--accent-light); }
+        .card-icon.green { background: var(--accent2-light); }
+        .card-icon.amber { background: var(--accent3-light); }
+        .card-icon.red { background: var(--red-light); }
+        .card h4 { font-weight: 600; margin-bottom: 8px; font-size: 1.05rem; }
+        .card p { color: var(--text-secondary); font-size: 0.92rem; }
+
+        /* Code Block */
+        .code-block {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            box-shadow: var(--shadow-md);
+        }
+        .code-block .hl-purple { color: #cba6f7; }
+        .code-block .hl-green { color: #a6e3a1; }
+        .code-block .hl-blue { color: #89b4fa; }
+        .code-block .hl-amber { color: #fab387; }
+        .code-block .hl-comment { color: #6c7086; }
+        .code-block .hl-dim { color: #585b70; }
+
+        /* Flow */
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: wrap;
+        }
+        .flow-box {
+            flex: 0 0 260px;
+            text-align: center;
+            padding: 32px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+        .flow-box h4 { margin-bottom: 8px; font-weight: 600; }
+        .flow-box .cost {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 12px 0 4px;
+        }
+        .flow-box .cost-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .flow-box.manual .cost { color: var(--red); }
+        .flow-box.ai .cost { color: var(--accent2); }
+        .flow-arrow-box {
+            flex-shrink: 0;
+            padding: 0 16px;
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        .flow-arrow-box .label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--red);
+        }
+
+        /* Table */
+        .compare-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        .compare-table th {
+            text-align: left;
+            padding: 16px 24px;
+            background: var(--bg-alt);
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+        .compare-table td {
+            padding: 14px 24px;
+            font-size: 0.92rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .compare-table tr:last-child td { border-bottom: none; }
+        .compare-table td:first-child { font-weight: 500; }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge.red { background: var(--red-light); color: var(--red); }
+        .badge.green { background: var(--accent2-light); color: var(--accent2); }
+        .badge.amber { background: var(--accent3-light); color: var(--accent3); }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 32px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 4px;
+            bottom: 4px;
+            width: 2px;
+            background: var(--border);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 32px;
+        }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-dot {
+            position: absolute;
+            left: -25px;
+            top: 3px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            background: var(--bg);
+        }
+        .timeline-dot.filled { background: var(--accent); }
+        .timeline-item h4 { font-weight: 600; margin-bottom: 4px; }
+        .timeline-item p { color: var(--text-secondary); font-size: 0.9rem; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 48px 28px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .graph-demo { padding: 24px; flex-direction: column; }
+            .graph-svg svg { width: 100%; height: auto; }
+            .flow-row { flex-direction: column; }
+            .flow-arrow-box { transform: rotate(90deg); padding: 12px 0; }
+            .compare-table { font-size: 0.8rem; }
+            .compare-table th, .compare-table td { padding: 10px 12px; }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Hero -->
+<header class="hero">
+    <div class="kicker">Obsidian · 双向链接</div>
+    <h1>让笔记<span>长出关联</span></h1>
+    <p class="lead">
+        双向链接是 Obsidian 最强大的特性——但手动维护链接的成本，是它最大的门槛。
+        现在，这个成本由 AI 承担。
+    </p>
+    <div class="stat-row">
+        <div class="stat">
+            <div class="stat-value">100%</div>
+            <div class="stat-label">链接由 AI 自动创建</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">0</div>
+            <div class="stat-label">手动打 [[ 的次数</div>
+        </div>
+    </div>
+</header>
+
+<!-- What is 双链 -->
+<section>
+    <div class="container">
+        <div class="section-label">核心概念</div>
+        <div class="section-title">什么是双向链接</div>
+        <div class="section-desc">传统笔记是孤立的文件。双向链接让每篇笔记相互引用——当你查看某篇笔记时，所有提及它的其他笔记会自动浮现。</div>
+
+        <div class="graph-demo">
+            <div class="graph-svg">
+                <svg width="420" height="340" viewBox="0 0 420 340" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background grid -->
+                    <defs>
+                        <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                            <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#eef0f3" stroke-width="0.5"/>
+                        </pattern>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="blur"/>
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+                    <rect width="420" height="340" fill="url(#grid)" rx="8"/>
+
+                    <!-- Links (animated) -->
+                    <line x1="210" y1="60" x2="100" y2="200" stroke="#4f46e5" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.4" class="link-line"/>
+                    <line x1="210" y1="60" x2="320" y2="180" stroke="#4f46e5" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.4" class="link-line"/>
+                    <line x1="210" y1="60" x2="280" y2="270" stroke="#4f46e5" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.4" class="link-line"/>
+                    <line x1="210" y1="60" x2="130" y2="280" stroke="#4f46e5" stroke-width="1.5" stroke-dasharray="6 3" opacity="0.4" class="link-line"/>
+                    <line x1="100" y1="200" x2="130" y2="280" stroke="#059669" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.3"/>
+                    <line x1="320" y1="180" x2="280" y2="270" stroke="#d97706" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.3"/>
+
+                    <!-- Pulsing ring -->
+                    <circle cx="210" cy="60" r="18" fill="none" stroke="#4f46e5" opacity="0.1" class="pulse-ring">
+                        <animate attributeName="r" values="18;30;18" dur="3s" repeatCount="indefinite"/>
+                        <animate attributeName="opacity" values="0.15;0.02;0.15" dur="3s" repeatCount="indefinite"/>
+                    </circle>
+
+                    <!-- Nodes -->
+                    <!-- Center: Diary -->
+                    <circle cx="210" cy="60" r="22" fill="white" stroke="#4f46e5" stroke-width="2.5"/>
+                    <text x="210" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#4f46e5">日记</text>
+
+                    <!-- People -->
+                    <circle cx="100" cy="200" r="18" fill="white" stroke="#059669" stroke-width="2" filter="url(#glow)"/>
+                    <text x="100" y="204" text-anchor="middle" font-size="10" font-weight="500" fill="#059669">人物</text>
+
+                    <circle cx="130" cy="280" r="14" fill="white" stroke="#059669" stroke-width="1.8"/>
+                    <text x="130" y="283" text-anchor="middle" font-size="9" fill="#059669">人物</text>
+
+                    <!-- Places -->
+                    <circle cx="320" cy="180" r="18" fill="white" stroke="#d97706" stroke-width="2"/>
+                    <text x="320" y="184" text-anchor="middle" font-size="10" font-weight="500" fill="#d97706">地点</text>
+
+                    <circle cx="280" cy="270" r="14" fill="white" stroke="#d97706" stroke-width="1.8"/>
+                    <text x="280" y="273" text-anchor="middle" font-size="9" fill="#d97706">地点</text>
+
+                    <!-- Backlinks indicator (animated arrows from nodes back to diary) -->
+                    <g opacity="0" class="backlink-indicator">
+                        <animate attributeName="opacity" values="0;0.6;0.6;0" dur="4s" repeatCount="indefinite" begin="1s"/>
+                        <polygon points="195,58 205,52 205,64" fill="#4f46e5" opacity="0.7"/>
+                    </g>
+
+                    <!-- Animated new link being created -->
+                    <circle cx="0" cy="0" r="4" fill="#4f46e5" opacity="0" class="new-link-dot">
+                        <animate attributeName="cx" values="210;100" dur="2s" repeatCount="indefinite" begin="0s"/>
+                        <animate attributeName="cy" values="60;200" dur="2s" repeatCount="indefinite" begin="0s"/>
+                        <animate attributeName="opacity" values="0;0.8;0" dur="2s" repeatCount="indefinite" begin="0s"/>
+                    </circle>
+                    <circle cx="0" cy="0" r="4" fill="#059669" opacity="0">
+                        <animate attributeName="cx" values="210;130" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+                        <animate attributeName="cy" values="60;280" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+                        <animate attributeName="opacity" values="0;0.8;0" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+                    </circle>
+                    <circle cx="0" cy="0" r="4" fill="#d97706" opacity="0">
+                        <animate attributeName="cx" values="210;320" dur="3s" repeatCount="indefinite" begin="1s"/>
+                        <animate attributeName="cy" values="60;180" dur="3s" repeatCount="indefinite" begin="1s"/>
+                        <animate attributeName="opacity" values="0;0.8;0" dur="3s" repeatCount="indefinite" begin="1s"/>
+                    </circle>
+                </svg>
+            </div>
+            <div class="graph-legend">
+                <h4>知识图谱示意</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
+                    每一次记录都会自动识别其中的人物、地点，并与日记建立双向链接。
+                    打开任何一篇笔记，所有关联自动浮现。
+                </p>
+                <div class="legend-item"><span class="legend-dot diary"></span> 日记 — 时间线上的事件记录</div>
+                <div class="legend-item"><span class="legend-dot person"></span> 人物 — 被提及的人自动建卡</div>
+                <div class="legend-item"><span class="legend-dot place"></span> 地点 — 去过的地方自动关联</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- The Cost -->
+<section class="alt">
+    <div class="container">
+        <div class="section-label">门槛</div>
+        <div class="section-title">链接的代价</div>
+        <div class="section-desc">双向链接很强大，但每一对链接都需要有人来创建。在 AI 之前，这是最容易被放弃的环节。</div>
+
+        <div style="margin-bottom: 48px;">
+            <div class="code-block">
+<span class="hl-comment"># 没有双链：写完就放在那里，信息孤岛</span>
+<span class="hl-dim">日记/2026-06-21.md</span>
+今天和<span class="hl-dim">端端</span>去<span class="hl-dim">龙岩</span>吃<span class="hl-dim">清汤粉</span>。
+
+<span class="hl-comment"># 手动双链：每个实体都要记下名称、创建卡片、打 [[ ]]</span>
+<span class="hl-dim">日记/2026-06-21.md</span>
+今天和<span class="hl-purple">[[端端]]</span>去<span class="hl-amber">[[龙岩]]</span>吃<span class="hl-green">[[清汤粉]]</span>。
+
+<span class="hl-comment"># 还要创建三张卡片：人物/端端.md、地点/龙岩.md、美食/清汤粉.md</span>
+<span class="hl-comment"># 每张卡片要写内容、打回链……</span>
+
+<span class="hl-comment"># === 这是一个需要持续投入的维护工作 ===</span>
+            </div>
+        </div>
+
+        <div class="flow-row">
+            <div class="flow-box manual">
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--red); text-transform: uppercase; letter-spacing: 0.05em;">手动维护</div>
+                <div class="cost">~3x</div>
+                <div class="cost-label">记录时间的 3 倍用于链接</div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 12px;">
+                    识别实体 → 创建卡片 → 打 [[链接]] → 回链验证
+                </p>
+            </div>
+            <div class="flow-arrow-box">
+                <span style="font-size: 2rem;">→</span>
+                <div style="font-size: 0.7rem; font-weight: 600; color: var(--red); margin-top: 4px;">放弃率 90%+</div>
+            </div>
+            <div class="flow-box" style="border: 2px solid var(--red); background: var(--red-light);">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">📄</div>
+                <h4>孤立的日记文件</h4>
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">没有链接就没有图谱，<br>Obsidian 的核心价值归零。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AI Solution -->
+<section>
+    <div class="container">
+        <div class="section-label">解决方案</div>
+        <div class="section-title">让 AI 承担链接成本</div>
+        <div class="section-desc">大模型天然擅长实体识别和关系抽取——这正是链接维护所需要的全部能力。</div>
+
+        <div class="flow-row" style="margin-bottom: 48px;">
+            <div class="flow-box" style="border: 2px solid var(--border);">
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">你只需要</div>
+                <div class="cost" style="color: var(--text-primary);">说话</div>
+                <div class="cost-label">飞书语音输入，零摩擦</div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 12px;">
+                    口语化叙述即可，不需要组织语言
+                </p>
+            </div>
+            <div class="flow-arrow-box">
+                <span style="font-size: 2rem;">→</span>
+                <div class="label" style="color: var(--accent2);">AI 处理</div>
+            </div>
+            <div class="flow-box ai">
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--accent2); text-transform: uppercase; letter-spacing: 0.05em;">AI 自动完成</div>
+                <div class="cost">~0</div>
+                <div class="cost-label">增量成本近乎为零</div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 12px;">
+                    实体识别 → 卡片判断 → 双链建立 → 内容结构化
+                </p>
+            </div>
+        </div>
+
+        <!-- Timeline of what AI does -->
+        <div class="card" style="max-width: 680px; margin: 0 auto;">
+            <h4 style="margin-bottom: 20px; font-weight: 600;">AI 在后台完成了这些</h4>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot filled"></div>
+                    <h4>命名实体识别</h4>
+                    <p>从语音转文字的内容中识别出人名、地名、食物名、事件名</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot filled"></div>
+                    <h4>去重与消歧</h4>
+                    <p>判断「阿花」和「奶奶」是同一个人，建立别名映射</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot filled"></div>
+                    <h4>卡片创建决策</h4>
+                    <p>判断是否需要新建卡片：有名字的人物 → 建；会被反复引用的地点 → 建；一次性路人 → 不建</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot filled"></div>
+                    <h4>双向链接注入</h4>
+                    <p>把 [[双链]] 写入日记 Markdown，同时在人物/地点卡片中维护信息</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot filled"></div>
+                    <h4>持续学习</h4>
+                    <p>记住你的偏好：卡片命名规则、目录结构、哪些实体需要独立建卡</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Before / After -->
+<section class="alt">
+    <div class="container">
+        <div class="section-label">对比</div>
+        <div class="section-title">有人维护 vs 无人维护</div>
+        <div class="section-desc">同样的记录量，链接质量的天壤之别。</div>
+
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th>维度</th>
+                    <th>手动维护</th>
+                    <th>AI 自动维护</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>链接覆盖率</td>
+                    <td><span class="badge red">~10%</span></td>
+                    <td><span class="badge green">~100%</span></td>
+                </tr>
+                <tr>
+                    <td>人物卡片</td>
+                    <td>只建最重要的几个人</td>
+                    <td>每个有名字的人都有卡片</td>
+                </tr>
+                <tr>
+                    <td>地点卡片</td>
+                    <td>偶尔建，信息空泛</td>
+                    <td>去过的都建，自动积累信息</td>
+                </tr>
+                <tr>
+                    <td>图谱可用性</td>
+                    <td><span class="badge red">稀疏</span></td>
+                    <td><span class="badge green">稠密</span></td>
+                </tr>
+                <tr>
+                    <td>时间投入</td>
+                    <td>记录时间的 2–3 倍</td>
+                    <td>0（完全自动）</td>
+                </tr>
+                <tr>
+                    <td>长期坚持</td>
+                    <td><span class="badge amber">困难</span></td>
+                    <td><span class="badge green">可持续</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Summary -->
+<section>
+    <div class="container" style="text-align: center;">
+        <div class="section-label">结论</div>
+        <div class="section-title" style="margin: 0 auto 16px;">双链的价值，由 AI 解锁</div>
+        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 36px; font-size: 1.05rem;">
+            Obsidian 的双向链接是强大的，但它需要一个维护者。
+            过去这个角色是<span style="font-weight: 500; color: var(--text-primary);">你自己</span>——这意味着要么付出大量时间，要么放弃链接质量。
+            现在这个角色由<span style="font-weight: 600; color: var(--accent);">大模型</span>承担——你说你的，它链它的。
+        </p>
+        <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <span class="badge green" style="padding: 6px 16px; font-size: 0.85rem;">链接覆盖率 100%</span>
+            <span class="badge green" style="padding: 6px 16px; font-size: 0.85rem;">维护成本 0</span>
+            <span class="badge green" style="padding: 6px 16px; font-size: 0.85rem;">长期可持续</span>
+        </div>
+    </div>
+</section>
+
+<footer>
+    飞书语音输入 + Hermes Agent + Obsidian 双链 · 一条零摩擦的长期记录链路
+</footer>
+
+</body>
+</html>

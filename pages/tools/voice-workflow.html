@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<script src="../../assets/js/nav-component.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞书语音 → Hermes → Obsidian 工作流</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --border-color: #30363d;
+            --accent: #58a6ff;
+            --accent2: #7c3aed;
+            --accent3: #3fb950;
+            --accent4: #f0883e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 24px 60px;
+            background: linear-gradient(180deg, rgba(88,166,255,0.08) 0%, transparent 100%);
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .hero .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        /* Flow Diagram */
+        .flow-section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: wrap;
+            padding: 40px 0;
+        }
+
+        .flow-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 0 0 280px;
+            position: relative;
+        }
+
+        .flow-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .flow-step:nth-child(1) .flow-icon {
+            background: linear-gradient(135deg, rgba(88,166,255,0.2), rgba(88,166,255,0.05));
+            border: 2px solid rgba(88,166,255,0.3);
+        }
+        .flow-step:nth-child(2) .flow-icon {
+            background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(124,58,237,0.05));
+            border: 2px solid rgba(124,58,237,0.3);
+        }
+        .flow-step:nth-child(3) .flow-icon {
+            background: linear-gradient(135deg, rgba(63,185,80,0.2), rgba(63,185,80,0.05));
+            border: 2px solid rgba(63,185,80,0.3);
+        }
+
+        .flow-step h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .flow-step:nth-child(1) h3 { color: var(--accent); }
+        .flow-step:nth-child(2) h3 { color: #a78bfa; }
+        .flow-step:nth-child(3) h3 { color: var(--accent3); }
+
+        .flow-step p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            max-width: 240px;
+        }
+
+        .flow-arrow {
+            font-size: 2rem;
+            color: var(--text-secondary);
+            margin: 0 8px;
+            flex-shrink: 0;
+        }
+
+        /* Feature Cards */
+        .features-section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            font-size: 1.05rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .feature-card .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h4 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+        }
+
+        /* Comparison */
+        .comparison-section {
+            max-width: 900px;
+            margin: 0 auto 80px;
+            padding: 0 24px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+        }
+
+        .comparison-table th {
+            text-align: left;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .comparison-table td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+        }
+
+        .comparison-table tr td:first-child {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .check { color: var(--accent3); font-weight: 700; }
+        .cross { color: #f85149; }
+
+        /* Use Cases */
+        .usecase-section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .usecase-card {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .usecase-card .usecase-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .usecase-card h4 {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .usecase-card p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .flow-container { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); margin: 8px 0; }
+            .flow-step { flex: 0 0 auto; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Hero -->
+    <section class="hero">
+        <h1>说话即记录</h1>
+        <p class="subtitle">
+            飞书语音输入 → Hermes AI 结构化 → Obsidian 知识库，<br>
+            一条零摩擦的长期记录链路。
+        </p>
+    </section>
+
+    <!-- Flow Diagram -->
+    <section class="flow-section">
+        <div class="section-title">工作流</div>
+        <div class="section-subtitle">三步，从说话到可检索的知识库</div>
+
+        <div class="flow-container">
+            <div class="flow-step">
+                <div class="flow-icon">🎤</div>
+                <h3>飞书语音输入</h3>
+                <p>走路、开车、做家务时说话即可。飞书 ASR 自动转文字，无需打字。</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <div class="flow-icon">🤖</div>
+                <h3>Hermes Agent</h3>
+                <p>AI 自动提取人物、地点、事件，建立双链，补全上下文，保持时间锚点。</p>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <div class="flow-icon">📝</div>
+                <h3>Obsidian 知识库</h3>
+                <p>日记、人物卡片、地点卡片、美食卡片自动归档，图谱可视化全局关联。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section">
+        <div class="section-title">为什么这样做</div>
+        <div class="section-subtitle">相比传统记录方式的核心优势</div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h4>零摩擦输入</h4>
+                <p>打开飞书说话即可。不需要打开笔记 App、不需要打字、不需要组织语言。想法产生的那一刻就记录下来了。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h4>AI 自动结构化</h4>
+                <p>你说的是口语化的流水账，AI 帮你拆分成结构化日记，自动识别人物、地点、食物并建立独立卡片。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <h4>双向链接</h4>
+                <p>提到「端端」就自动关联到端端的人物卡片，提到「龙岩」就链到龙岩。Obisidian 图谱让所有关联一目了然。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h4>移动优先输入</h4>
+                <p>飞书手机端语音输入是最高效的采集方式。打字慢、键盘小、思路容易断——语音完美解决了这些。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💾</div>
+                <h4>数据自有</h4>
+                <p>所有数据以 Markdown 文件存在你本地 Obsidian vault，不依赖任何云服务。你就是数据的主人。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h4>持续积累</h4>
+                <p>AI 记住你的偏好、纠正和规则。用得越久，它越懂你的记录习惯，摩擦越来越低。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="comparison-section">
+        <div class="section-title">对比传统方式</div>
+        <div class="section-subtitle">同样的场景，摩擦指数差多少</div>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>方式</th>
+                    <th>打开 App</th>
+                    <th>打字输入</th>
+                    <th>组织格式</th>
+                    <th>建立关联</th>
+                    <th>摩擦指数</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>手机备忘录</td>
+                    <td class="cross">✗</td>
+                    <td class="cross">✗</td>
+                    <td class="cross">✗</td>
+                    <td class="cross">✗</td>
+                    <td>🔴🔴🔴🔴</td>
+                </tr>
+                <tr>
+                    <td>Notion / 飞书文档</td>
+                    <td class="cross">✗</td>
+                    <td class="cross">✗</td>
+                    <td class="cross">✗</td>
+                    <td class="check">手动</td>
+                    <td>🔴🔴🔴</td>
+                </tr>
+                <tr>
+                    <td>Obsidian 手动输入</td>
+                    <td class="cross">✗</td>
+                    <td class="cross">✗</td>
+                    <td class="check">手动</td>
+                    <td class="check">手动</td>
+                    <td>🔴🔴</td>
+                </tr>
+                <tr>
+                    <td><strong>飞书语音 → Hermes</strong></td>
+                    <td class="check">✔ 秒开</td>
+                    <td class="check">✔ 语音</td>
+                    <td class="check">✔ 自动</td>
+                    <td class="check">✔ 自动</td>
+                    <td>🟢 近乎为零</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="usecase-section">
+        <div class="section-title">适用场景</div>
+        <div class="section-subtitle">这条链路不只是写日记</div>
+
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <div class="usecase-icon">👨‍👩‍👧</div>
+                <h4>家庭日记</h4>
+                <p>记录孩子成长、家庭出游、日常趣事</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">📚</div>
+                <h4>教育观察</h4>
+                <p>记录孩子的学习过程、思维发展、教育反思</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">🏥</div>
+                <h4>健康跟踪</h4>
+                <p>记录身体指标、就医经历、用药情况</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">🚗</div>
+                <h4>车辆保养</h4>
+                <p>记录保养项目、故障排查、花费明细</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">🍜</div>
+                <h4>美食地图</h4>
+                <p>记录吃过的店、特色菜、味道评价</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">🌍</div>
+                <h4>旅行回忆</h4>
+                <p>记录行程、见闻、人物、地点，自动关联</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">💡</div>
+                <h4>灵感捕捉</h4>
+                <p>突如其来的想法，说一句就记下来</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">📊</div>
+                <h4>长期复盘</h4>
+                <p>年底回看图谱，一年的生活轨迹一目了然</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        Powered by <strong>Feishu</strong> + <strong>Hermes Agent</strong> + <strong>Obsidian</strong> · 数据完全本地化 · 零月费
+    </footer>
+</body>
+</html>

@@ -76,6 +76,14 @@
             "path": "/tools/pages/tools/ai-math-human-thinking.html",
             "tag": "Tools",
             "description": "Terence Tao 与 Tanya Klowden 探讨 AI 对数学、智力产出及人类思维影响的深度论文。"
+        },
+        {
+            "id": "voice-workflow",
+            "name": "飞书语音工作流",
+            "icon": "🎤",
+            "path": "/tools/pages/tools/voice-workflow.html",
+            "tag": "Tools",
+            "description": "飞书语音 → Hermes → Obsidian 零摩擦长期记录链路介绍"
         }
     ]
 }

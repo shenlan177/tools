@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>您的专属运动健康报告</title>
+    
+    <!-- 针对不同邮件客户端的重置样式和基础媒体查询 -->
+    <style type="text/css">
+        /* 基础重置 */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+        
+        /* 悬停效果 (部分支持的客户端) */
+        a:hover { text-decoration: underline !important; }
+
+        /* 移动端响应式调整 */
+        @media screen and (max-width: 600px) {
+            .email-container { width: 100% !important; margin: auto !important; }
+            .fluid-img { max-width: 100% !important; height: auto !important; }
+            .mobile-padding { padding-left: 15px !important; padding-right: 15px !important; }
+            .stack-column { display: block !important; width: 100% !important; max-width: 100% !important; direction: ltr !important; }
+        }
+    </style>
+</head>
+<body width="100%" style="margin: 0; padding: 0 !important; mso-line-height-rule: exactly; background-color: #f3f4f6;">
+    <center style="width: 100%; background-color: #f3f4f6;">
+        
+        <!-- 主体约束容器，最大宽度600px -->
+        <div style="max-width: 600px; margin: 0 auto;" class="email-container">
+            
+            <!-- 邮件头部 -->
+            <table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto;">
+                <tr>
+                    <td style="padding: 30px 20px; text-align: center; background-color: #ffffff; border-radius: 12px 12px 0 0; border-bottom: 2px solid #f3f4f6;">
+                        <h1 style="margin: 0; font-size: 24px; color: #111827; font-weight: bold;">🏃‍♂️ 您的每日健康简报</h1>
+                        <p style="margin: 8px 0 0 0; font-size: 14px; color: #6b7280;">2026年6月22日 星期一</p>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- 第一部分：今日步数与目标 -->
+            <table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto; background-color: #ffffff;">
+                <tr>
+                    <td class="mobile-padding" style="padding: 30px 30px 20px 30px;">
+                        <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #374151;">今日步数</h2>
+                        
+                        <!-- 步数展示区域 -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                            <tr>
+                                <td style="text-align: center; padding: 20px; background-color: #ecfdf5; border-radius: 12px; border: 1px solid #d1fae5;">
+                                    <p style="margin: 0; font-size: 42px; font-weight: bold; color: #059669;">9,240</p>
+                                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #047857;">/ 8,500 步 (目标)</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- 目标达成提示 -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 15px;">
+                            <tr>
+                                <td style="padding-top: 10px;">
+                                    <p style="margin: 0; font-size: 15px; color: #059669; font-weight: bold;">
+                                        🎉 恭喜！您已超额完成今日 8500 步的目标！
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding-top: 15px;">
+                                    <!-- 纯 HTML 进度条 -->
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #e5e7eb; border-radius: 10px;">
+                                        <tr>
+                                            <td style="width: 100%; border-radius: 10px;">
+                                                <!-- 内部 div 控制进度宽度，例如：100% -->
+                                                <div style="width: 100%; background-color: #10b981; height: 12px; border-radius: 10px;"></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- 第二部分：每周运动趋势 (纯 HTML 柱状图) -->
+            <table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto; background-color: #ffffff;">
+                <tr>
+                    <td class="mobile-padding" style="padding: 20px 30px;">
+                        <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #374151;">本周步数趋势</h2>
+                        
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; padding: 20px;">
+                            <tr>
+                                <td style="padding: 20px;">
+                                    <!-- 柱状图表格 -->
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" height="120">
+                                        <tr valign="bottom">
+                                            <!-- 周一 -->
+                                            <td width="14%" align="center" style="padding: 0 2px;">
+                                                <div style="background-color: #93c5fd; width: 100%; max-width: 30px; height: 70px; margin: 0 auto; border-radius: 4px 4px 0 0;"></div>
+                                                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">一</p>
+                                            </td>
+                                            <!-- 周二 -->
+                                            <td width="14%" align="center" style="padding: 0 2px;">
+                                                <div style="background-color: #93c5fd; width: 100%; max-width: 30px; height: 85px; margin: 0 auto; border-radius: 4px 4px 0 0;"></div>
+                                                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">二</p>
+                                            </td>
+                                            <!-- 周三 -->
+                                            <td width="14%" align="center" style="padding: 0 2px;">
+                                                <div style="background-color: #93c5fd; width: 100%; max-width: 30px; height: 50px; margin: 0 auto; border-radius: 4px 4px 0 0;"></div>
+                                                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">三</p>
+                                            </td>
+                                            <!-- 周四 -->
+                                            <td width="14%" align="center" style="padding: 0 2px;">
+                                                <div style="background-color: #93c5fd; width: 100%; max-width: 30px; height: 90px; margin: 0 auto; border-radius: 4px 4px 0 0;"></div>
+                                                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">四</p>
+                                            </td>
+                                            <!-- 周五 -->
+                                            <td width="14%" align="center" style="padding: 0 2px;">
+                                                <div style="background-color: #93c5fd; width: 100%; max-width: 30px; height: 65px; margin: 0 auto; border-radius: 4px 4px 0 0;"></div>
+                                                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">五</p>
+                                            </td>
+                                            <!-- 周六 -->
+                                            <td width="14%" align="center" style="padding: 0 2px;">
+                                                <div style="background-color: #93c5fd; width: 100%; max-width: 30px; height: 110px; margin: 0 auto; border-radius: 4px 4px 0 0;"></div>
+                                                <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">六</p>
+                                            </td>
+                                            <!-- 周日 (高亮) -->
+                                            <td width="14%" align="center" style="padding: 0 2px;">
+                                                <div style="background-color: #3b82f6; width: 100%; max-width: 30px; height: 92px; margin: 0 auto; border-radius: 4px 4px 0 0;"></div>
+                                                <p style="margin: 8px 0 0 0; font-size: 12px; color: #111827; font-weight: bold;">日</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- 第三部分：本月运动概况 -->
+            <table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto; background-color: #ffffff;">
+                <tr>
+                    <td class="mobile-padding" style="padding: 10px 30px 20px 30px;">
+                        <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #374151;">本月运动概况</h2>
+                        
+                        <!-- 概况数据汇总 (统计值) -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 20px;">
+                            <tr>
+                                <!-- 左侧数据块：平均值 -->
+                                <td class="stack-column" width="31%" style="background-color: #f3f4f6; padding: 15px 5px; border-radius: 8px; text-align: center;">
+                                    <p style="margin: 0; font-size: 12px; color: #6b7280;">日均步数</p>
+                                    <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #1f2937;">9,792</p>
+                                </td>
+                                <!-- 占位 -->
+                                <td class="stack-column" width="3.5%" style="padding: 5px 0;"></td>
+                                <!-- 中间数据块：中位数 -->
+                                <td class="stack-column" width="31%" style="background-color: #f3f4f6; padding: 15px 5px; border-radius: 8px; text-align: center;">
+                                    <p style="margin: 0; font-size: 12px; color: #6b7280;">步数中位数</p>
+                                    <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #1f2937;">9,550</p>
+                                </td>
+                                <!-- 占位 -->
+                                <td class="stack-column" width="3.5%" style="padding: 5px 0;"></td>
+                                <!-- 右侧数据块：达标 -->
+                                <td class="stack-column" width="31%" style="background-color: #f3f4f6; padding: 15px 5px; border-radius: 8px; text-align: center;">
+                                    <p style="margin: 0; font-size: 12px; color: #6b7280;">达标天数</p>
+                                    <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #1f2937;">18</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Git风格日历格子图 (扩大展开并加入日期) -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; padding: 20px;">
+                            <tr>
+                                <td style="padding: 10px;">
+                                    <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280; text-align: left;">日历分布 (颜色越深步数越多)</p>
+                                    
+                                    <!-- 铺开的格子图表 (width="100%" 自动拉伸) -->
+                                    <table role="presentation" cellspacing="6" cellpadding="0" border="0" width="100%" style="margin: 0 auto; table-layout: fixed;">
+                                        <!-- 表头 -->
+                                        <tr>
+                                            <td style="font-size: 12px; color: #9ca3af; text-align: center; padding-bottom: 8px;">一</td>
+                                            <td style="font-size: 12px; color: #9ca3af; text-align: center; padding-bottom: 8px;">二</td>
+                                            <td style="font-size: 12px; color: #9ca3af; text-align: center; padding-bottom: 8px;">三</td>
+                                            <td style="font-size: 12px; color: #9ca3af; text-align: center; padding-bottom: 8px;">四</td>
+                                            <td style="font-size: 12px; color: #9ca3af; text-align: center; padding-bottom: 8px;">五</td>
+                                            <td style="font-size: 12px; color: #9ca3af; text-align: center; padding-bottom: 8px;">六</td>
+                                            <td style="font-size: 12px; color: #9ca3af; text-align: center; padding-bottom: 8px;">日</td>
+                                        </tr>
+                                        <!-- 第1周 -->
+                                        <tr>
+                                            <td style="height: 38px; background-color: #ebedf0; border-radius: 4px; text-align: center; font-size: 13px; color: #9ca3af;">1</td>
+                                            <td style="height: 38px; background-color: #a7f3d0; border-radius: 4px; text-align: center; font-size: 13px; color: #047857;">2</td>
+                                            <td style="height: 38px; background-color: #34d399; border-radius: 4px; text-align: center; font-size: 13px; color: #064e3b;">3</td>
+                                            <td style="height: 38px; background-color: #10b981; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">4</td>
+                                            <td style="height: 38px; background-color: #059669; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">5</td>
+                                            <td style="height: 38px; background-color: #a7f3d0; border-radius: 4px; text-align: center; font-size: 13px; color: #047857;">6</td>
+                                            <td style="height: 38px; background-color: #10b981; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">7</td>
+                                        </tr>
+                                        <!-- 第2周 -->
+                                        <tr>
+                                            <td style="height: 38px; background-color: #34d399; border-radius: 4px; text-align: center; font-size: 13px; color: #064e3b;">8</td>
+                                            <td style="height: 38px; background-color: #059669; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">9</td>
+                                            <td style="height: 38px; background-color: #ebedf0; border-radius: 4px; text-align: center; font-size: 13px; color: #9ca3af;">10</td>
+                                            <td style="height: 38px; background-color: #34d399; border-radius: 4px; text-align: center; font-size: 13px; color: #064e3b;">11</td>
+                                            <td style="height: 38px; background-color: #10b981; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">12</td>
+                                            <td style="height: 38px; background-color: #059669; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">13</td>
+                                            <td style="height: 38px; background-color: #10b981; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">14</td>
+                                        </tr>
+                                        <!-- 第3周 -->
+                                        <tr>
+                                            <td style="height: 38px; background-color: #a7f3d0; border-radius: 4px; text-align: center; font-size: 13px; color: #047857;">15</td>
+                                            <td style="height: 38px; background-color: #a7f3d0; border-radius: 4px; text-align: center; font-size: 13px; color: #047857;">16</td>
+                                            <td style="height: 38px; background-color: #34d399; border-radius: 4px; text-align: center; font-size: 13px; color: #064e3b;">17</td>
+                                            <td style="height: 38px; background-color: #10b981; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">18</td>
+                                            <td style="height: 38px; background-color: #059669; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">19</td>
+                                            <td style="height: 38px; background-color: #ebedf0; border-radius: 4px; text-align: center; font-size: 13px; color: #9ca3af;">20</td>
+                                            <td style="height: 38px; background-color: #ebedf0; border-radius: 4px; text-align: center; font-size: 13px; color: #9ca3af;">21</td>
+                                        </tr>
+                                        <!-- 第4周 -->
+                                        <tr>
+                                            <td style="height: 38px; background-color: #059669; border-radius: 4px; text-align: center; font-size: 13px; color: #ffffff;">22</td>
+                                            <td style="height: 38px; background-color: #f3f4f6; border-radius: 4px; text-align: center; font-size: 13px; color: #d1d5db;">23</td> <!-- 未来天数浅色 -->
+                                            <td style="height: 38px; background-color: #f3f4f6; border-radius: 4px; text-align: center; font-size: 13px; color: #d1d5db;">24</td>
+                                            <td style="height: 38px; background-color: #f3f4f6; border-radius: 4px; text-align: center; font-size: 13px; color: #d1d5db;">25</td>
+                                            <td style="height: 38px; background-color: #f3f4f6; border-radius: 4px; text-align: center; font-size: 13px; color: #d1d5db;">26</td>
+                                            <td style="height: 38px; background-color: #f3f4f6; border-radius: 4px; text-align: center; font-size: 13px; color: #d1d5db;">27</td>
+                                            <td style="height: 38px; background-color: #f3f4f6; border-radius: 4px; text-align: center; font-size: 13px; color: #d1d5db;">28</td>
+                                        </tr>
+                                        <!-- 第5周 -->
+                                        <tr>
+                                            <td style="height: 38px; background-color: #f3f4f6; border-radius: 4px; text-align: center; font-size: 13px; color: #d1d5db;">29</td>
+                                            <td style="height: 38px; background-color: #f3f4f6; border-radius: 4px; text-align: center; font-size: 13px; color: #d1d5db;">30</td>
+                                            <td style="height: 38px; background-color: transparent;"></td> <!-- 占位补齐表格 -->
+                                            <td style="height: 38px; background-color: transparent;"></td>
+                                            <td style="height: 38px; background-color: transparent;"></td>
+                                            <td style="height: 38px; background-color: transparent;"></td>
+                                            <td style="height: 38px; background-color: transparent;"></td>
+                                        </tr>
+                                    </table>
+
+                                    <!-- 图例 Legend -->
+                                    <table role="presentation" cellspacing="3" cellpadding="0" border="0" style="margin: 20px auto 0 auto;">
+                                        <tr>
+                                            <td style="font-size: 12px; color: #6b7280; padding-right: 6px;">少</td>
+                                            <td style="width: 14px; height: 14px; background-color: #ebedf0; border-radius: 2px;"></td>
+                                            <td style="width: 14px; height: 14px; background-color: #a7f3d0; border-radius: 2px;"></td>
+                                            <td style="width: 14px; height: 14px; background-color: #34d399; border-radius: 2px;"></td>
+                                            <td style="width: 14px; height: 14px; background-color: #10b981; border-radius: 2px;"></td>
+                                            <td style="width: 14px; height: 14px; background-color: #059669; border-radius: 2px;"></td>
+                                            <td style="font-size: 12px; color: #6b7280; padding-left: 6px;">多</td>
+                                        </tr>
+                                    </table>
+
+                                </td>
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+            </table>
+
+            <!-- 第四部分：三餐记录 (额外模块) -->
+            <table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto; background-color: #ffffff;">
+                <tr>
+                    <td class="mobile-padding" style="padding: 10px 30px 30px 30px;">
+                        <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #374151;">今日三餐记录</h2>
+                        
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 12px;">
+                            <!-- 早餐 -->
+                            <tr>
+                                <td width="40" style="padding: 15px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 20px;">🍳</td>
+                                <td style="padding: 15px 15px 15px 0; border-bottom: 1px solid #e5e7eb;">
+                                    <p style="margin: 0; font-size: 14px; font-weight: bold; color: #374151;">早餐</p>
+                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">燕麦粥、水煮蛋、黑咖啡</p>
+                                </td>
+                            </tr>
+                            <!-- 午餐 -->
+                            <tr>
+                                <td width="40" style="padding: 15px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 20px;">🥗</td>
+                                <td style="padding: 15px 15px 15px 0; border-bottom: 1px solid #e5e7eb;">
+                                    <p style="margin: 0; font-size: 14px; font-weight: bold; color: #374151;">午餐</p>
+                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">香煎鸡胸肉沙拉、糙米饭</p>
+                                </td>
+                            </tr>
+                            <!-- 晚餐 -->
+                            <tr>
+                                <td width="40" style="padding: 15px; text-align: center; font-size: 20px;">🐟</td>
+                                <td style="padding: 15px 15px 15px 0;">
+                                    <p style="margin: 0; font-size: 14px; font-weight: bold; color: #374151;">晚餐</p>
+                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">清蒸鲈鱼、炒菠菜、半碗番薯</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- 邮件底部 Footer -->
+            <table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto;">
+                <tr>
+                    <td style="padding: 30px; text-align: center; font-size: 12px; color: #9ca3af; background-color: #f3f4f6;">
+                        <p style="margin: 0 0 10px 0;">由您的健康助手自动生成发送</p>
+                        <p style="margin: 0;">如果不想继续接收此类邮件，请 <a href="#" style="color: #6b7280; text-decoration: underline;">点击退订</a></p>
+                    </td>
+                </tr>
+            </table>
+
+        </div>
+    </center>
+</body>
+</html>

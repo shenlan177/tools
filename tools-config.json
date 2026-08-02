@@ -86,6 +86,14 @@
             "description": "飞书语音 → Hermes → Obsidian 零摩擦长期记录链路介绍"
         },
         {
+            "id": "into-the-breach-v2",
+            "name": "陷阵之志复刻 v2",
+            "icon": "🤖",
+            "path": "/tools/pages/tools/into-the-breach-v2.html",
+            "tag": "Games",
+            "description": "Into the Breach 风格回合制战术原型：钢铁柔道 v2"
+        },
+        {
             "id": "bidirectional-links",
             "name": "双链的力量",
             "icon": "🔗",

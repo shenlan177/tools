@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!-- 导航组件 -->
+<script src="../../assets/js/nav-component.js"></script>
+<head>
+<meta charset="UTF-8">
+<title>陷阵之志复刻 — 钢铁柔道 v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 12px;
+  }
+  h1 { font-size: 18px; color: #f0c040; margin-bottom: 8px; letter-spacing: 2px; }
+  #hud {
+    width: 900px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+  #hud .stat { display: flex; align-items: center; gap: 6px; }
+  #hud .label { color: #8b949e; font-size: 13px; }
+  #powerVal { color: #ffd75e; font-weight: bold; }
+  #turnVal { color: #58a6ff; font-weight: bold; }
+  #enemyVal { color: #ff7b72; font-weight: bold; }
+  #mechInfo { margin-left: auto; color: #a5d6ff; font-size: 14px; }
+  #wrap { position: relative; }
+  canvas {
+    display: block;
+    background: #12181c;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #bottom { width: 900px; display: flex; gap: 12px; margin-top: 8px; align-items: stretch; }
+  #log {
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #c9d1d9;
+    min-height: 96px;
+    max-height: 110px;
+    overflow-y: auto;
+  }
+  #log div { padding: 1px 0; }
+  #log .evt { color: #f0c040; }
+  #log .bad { color: #ff7b72; }
+  #log .good { color: #7ee787; }
+  #log .boom { color: #ff9e3d; }
+  #btnCol { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  button {
+    background: #21262d;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button:hover { background: #30363d; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #btnEnd { background: #1f3a5f; border-color: #316dca; }
+  #btnEnd:hover { background: #2a4f80; }
+  #legend {
+    width: 400px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #c9d1d9;
+  }
+  #legend .lg-title { color: #8b949e; font-size: 11px; margin: 4px 0 3px; font-weight: bold; }
+  #legend .lg-item { display: flex; align-items: center; gap: 6px; line-height: 1.45; }
+  #legend .chip { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.25); }
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.78);
+    z-index: 50;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+  #overlay.show { display: flex; }
+  #overlay h2 { font-size: 40px; letter-spacing: 6px; }
+  #overlay .sub { font-size: 16px; color: #8b949e; }
+  #overlay.win h2 { color: #7ee787; }
+  #overlay.lose h2 { color: #ff7b72; }
+  #tip { margin-top: 6px; font-size: 12px; color: #8b949e; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>⚔ 陷阵之志 · 钢铁柔道 v2</h1>
+
+  <div id="hud">
+    <div class="stat"><span class="label">电力</span><span id="powerVal">5/5</span></div>
+    <div class="stat"><span class="label">回合</span><span id="turnVal">1/5</span></div>
+    <div class="stat"><span class="label">敌人</span><span id="enemyVal">3</span></div>
+    <div id="mechInfo"></div>
+  </div>
+
+  <div id="wrap">
+    <canvas id="cv" width="900" height="540"></canvas>
+  </div>
+
+  <div id="bottom">
+    <div id="log"></div>
+    <div id="btnCol">
+      <button id="btnEnd">结束回合</button>
+      <button id="btnRestart">重新开始</button>
+    </div>
+    <div id="legend">
+      <div class="lg-title">机甲 · 钢铁柔道</div>
+      <div class="lg-item"><span class="chip" style="background:#1e88e5"></span>柔道：抓相邻敌人扔向身后1格（1伤），扔下水/撞墙都算</div>
+      <div class="lg-item"><span class="chip" style="background:#43a047"></span>攻城：发射集束弹（射程4直线），落点1伤，落点四方向单位受1伤并被弹开</div>
+      <div class="lg-item"><span class="chip" style="background:#fb8c00"></span>重力：把射程内直线敌人拉近1格；被动：虫打虫伤害+1</div>
+      <div class="lg-title">敌人</div>
+      <div class="lg-item"><span class="chip" style="background:#e53935"></span>萤火虫：向前方直线3格发射（弹道第一个目标1伤）</div>
+      <div class="lg-item"><span class="chip" style="background:#ad1457"></span>圣甲虫：吊射射程3内任意目标1伤（无视路径）</div>
+      <div class="lg-item"><span class="chip" style="background:#8e2430"></span>毒蝎：射程3内攻击1伤并网住（被网不能移动）</div>
+      <div class="lg-title">机制</div>
+      <div class="lg-item"><span class="chip" style="background:#fbc02d"></span>黄色圈 = 敌人钻出点，机甲站上去可拦截（受1伤）</div>
+      <div class="lg-item"><span class="chip" style="background:#888"></span>位移撞到单位双方受伤（虫打虫），攻击方向锁定不变</div>
+    </div>
+  </div>
+  <div id="tip">点机甲选中（绿=移动 红=攻击）→ 攻城机甲点格子发射 → 撑过5回合敌人撤退即胜</div>
+
+  <div id="overlay">
+    <h2 id="ovTitle">胜利</h2>
+    <div class="sub" id="ovSub"></div>
+    <button id="btnAgain" style="padding: 14px 40px; font-size: 18px;">再打一局</button>
+  </div>
+
+<script>
+"use strict";
+
+/* ============ 常量 ============ */
+const COLS = 8, ROWS = 8;
+const TW = 64, TH = 32;
+const OFF_X = 450, OFF_Y = 190;
+const CV_W = 900, CV_H = 540;
+const TURN_LIMIT = 5;
+const MAX_LOG = 40;
+
+const MECH_DEFS = {
+  judo:    { id: "judo",    name: "柔道", color: "#1e88e5", hp: 3, move: 4, weapon: "judo",   desc: "抓相邻敌人扔向身后1格（1伤）" },
+  siege:   { id: "siege",   name: "攻城", color: "#43a047", hp: 2, move: 3, weapon: "siege",  desc: "集束弹：射程4直线落点1伤，四方向弹开" },
+  gravity: { id: "gravity", name: "重力", color: "#fb8c00", hp: 3, move: 3, weapon: "pull",   desc: "拉射程3内直线敌人近1格；虫打虫+1" },
+};
+
+const ENEMY_DEFS = {
+  firefly: { name: "萤火虫", color: "#e53935", hp: 3, atk: 1, range: 3, move: 2, desc: "向前方直线3格发射（弹道第一个目标）" },
+  scarab:  { name: "圣甲虫", color: "#ad1457", hp: 2, atk: 1, range: 3, move: 3, desc: "吊射射程3内任意目标（无视路径）" },
+  scorp:   { name: "毒蝎",   color: "#8e2430", hp: 3, atk: 1, range: 3, move: 3, desc: "射程3内攻击并网住目标（不能移动）" },
+};
+
+/* ============ 状态 ============ */
+let grid = [];
+let mechs = [];
+let enemies = [];
+let buildings = [];
+let spawnPoints = [];
+let STATE = null;
+
+/* ============ 工具 ============ */
+function gridToScreen(c, r) {
+  return { x: OFF_X + (c - r) * TW / 2, y: OFF_Y + (c + r) * TH / 2 };
+}
+function screenToGrid(mx, my) {
+  const a = (mx - OFF_X) / (TW / 2);
+  const b = (my - OFF_Y) / (TH / 2);
+  const c = Math.round((a + b) / 2);
+  const r = Math.round((b - a) / 2);
+  if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return null;
+  const pt = gridToScreen(c, r);
+  if (Math.abs(mx - pt.x) > TW / 2 + 2 || Math.abs(my - pt.y) > TH / 2 + 2) return null;
+  return { c, r };
+}
+function key(c, r) { return c + "," + r; }
+function getTile(c, r) { return grid[r][c]; }
+function getMechAt(c, r) { return mechs.find(m => m.alive && m.c === c && m.r === r) || null; }
+function getEnemyAt(c, r) { return enemies.find(e => e.alive && !e.hidden && e.c === c && e.r === r) || null; }
+function getBuildingAt(c, r) { return buildings.find(b => b.alive && b.c === c && b.r === r) || null; }
+function manhattan(a, b) { return Math.abs(a.c - b.c) + Math.abs(a.r - b.r); }
+function inBounds(c, r) { return c >= 0 && c < COLS && r >= 0 && r < ROWS; }
+
+/* ============ 关卡 ============ */
+function buildLevel() {
+  grid = [];
+  for (let r = 0; r < ROWS; r++) {
+    grid.push([]);
+    for (let c = 0; c < COLS; c++) grid[r].push(0);
+  }
+  const put = (c, r, t) => { grid[r][c] = t; };
+  // 水：右下湖 + 左下水坑
+  [[5,4],[6,4],[5,5],[6,5],[2,6]].forEach(p => put(p[0], p[1], "water"));
+  // 山
+  [[5,0],[6,6],[2,4],[0,2],[7,2]].forEach(p => put(p[0], p[1], "mountain"));
+  // 建筑：集中在左中，远离敌人出生线
+  buildings = [[2,1],[2,2],[4,2],[3,5],[1,6]].map((p, i) => ({
+    id: "b" + i, c: p[0], r: p[1], hp: 1, alive: true,
+  }));
+  // 机甲：钢铁柔道
+  mechs = [
+    { id: "judo",    def: MECH_DEFS.judo,    c: 1, r: 3, hp: 3, maxHp: 3, alive: true, moved: false, acted: false, web: false },
+    { id: "siege",   def: MECH_DEFS.siege,   c: 2, r: 3, hp: 2, maxHp: 2, alive: true, moved: false, acted: false, web: false },
+    { id: "gravity", def: MECH_DEFS.gravity, c: 1, r: 4, hp: 3, maxHp: 3, alive: true, moved: false, acted: false, web: false },
+  ];
+  // 敌人：全部在右半场，第一回合打不到建筑
+  enemies = [
+    { id: "e0", type: "firefly", def: ENEMY_DEFS.firefly, c: 7, r: 1, hp: 3, alive: true, hidden: false, intent: null, web: false },
+    { id: "e1", type: "scarab",  def: ENEMY_DEFS.scarab,  c: 7, r: 0, hp: 2, alive: true, hidden: false, intent: null, web: false },
+    { id: "e2", type: "scorp",   def: ENEMY_DEFS.scorp,   c: 6, r: 7, hp: 3, alive: true, hidden: false, intent: null, web: false },
+  ];
+  // 钻出点
+  spawnPoints = [{ c: 6, r: 1 }, { c: 7, r: 4 }, { c: 5, r: 6 }];
+  STATE = {
+    phase: "player",
+    turn: 1,
+    power: buildings.length,
+    maxPower: buildings.length,
+    selectedId: null,
+    selectedEnemyId: null,
+    moveTargets: [],
+    attackTargets: [],
+    over: false,
+    won: false,
+    log: [],
+  };
+}
+
+/* ============ 移动范围（可穿友军，不可重叠） ============ */
+function bfsMove(c0, r0, range) {
+  const seen = new Set([key(c0, r0)]);
+  const out = [];
+  const q = [{ c: c0, r: r0, d: 0 }];
+  while (q.length) {
+    const cur = q.shift();
+    if (cur.d > 0) {
+      const t = getTile(cur.c, cur.r);
+      if (t !== "water" && t !== "mountain"
+          && !getEnemyAt(cur.c, cur.r)
+          && !getBuildingAt(cur.c, cur.r)
+          && !getMechAt(cur.c, cur.r)) {
+        out.push({ c: cur.c, r: cur.r });
+      }
+    }
+    if (cur.d >= range) continue;
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+    for (let i = 0; i < dirs.length; i++) {
+      const nc = cur.c + dirs[i][0], nr = cur.r + dirs[i][1];
+      if (!inBounds(nc, nr)) continue;
+      if (seen.has(key(nc, nr))) continue;
+      const t2 = getTile(nc, nr);
+      if (t2 === "water" || t2 === "mountain") continue;
+      if (getEnemyAt(nc, nr) || getBuildingAt(nc, nr)) continue;
+      seen.add(key(nc, nr));
+      q.push({ c: nc, r: nr, d: cur.d + 1 });
+    }
+  }
+  return out;
+}
+
+/* ============ 武器目标 ============ */
+function lineOfSight(c0, r0, c1, r1) {
+  // 直线（同 row 或同 col）且中间无山
+  if (c0 !== c1 && r0 !== r1) return false;
+  const dc = Math.sign(c1 - c0), dr = Math.sign(r1 - r0);
+  let cc = c0 + dc, rr = r0 + dr;
+  while (cc !== c1 || rr !== r1) {
+    if (getTile(cc, rr) === "mountain") return false;
+    cc += dc; rr += dr;
+  }
+  return true;
+}
+
+function attackTargetsFor(m) {
+  const w = m.def.weapon;
+  const out = [];
+  if (w === "judo") {
+    // 相邻敌人
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+    for (let i = 0; i < dirs.length; i++) {
+      const e = getEnemyAt(m.c + dirs[i][0], m.r + dirs[i][1]);
+      if (e && canJudoThrow(m, e)) out.push(e);
+    }
+  } else if (w === "siege") {
+    // 射程4直线上的格子（含敌人/建筑/空地）
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+    for (let i = 0; i < dirs.length; i++) {
+      const dc = dirs[i][0], dr = dirs[i][1];
+      for (let d = 1; d <= 4; d++) {
+        const nc = m.c + dc * d, nr = m.r + dr * d;
+        if (!inBounds(nc, nr)) break;
+        if (getTile(nc, nr) === "mountain") break;
+        out.push({ c: nc, r: nr });
+      }
+    }
+  } else if (w === "pull") {
+    // 射程3直线上的敌人（目标格可为空地才能拉）
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+    for (let i = 0; i < dirs.length; i++) {
+      const dc = dirs[i][0], dr = dirs[i][1];
+      for (let d = 1; d <= 3; d++) {
+        const nc = m.c + dc * d, nr = m.r + dr * d;
+        if (!inBounds(nc, nr)) break;
+        if (getTile(nc, nr) === "mountain") break;
+        const e = getEnemyAt(nc, nr);
+        if (e && canGravityPull(m, e)) out.push(e);
+      }
+    }
+  }
+  return out;
+}
+
+function canJudoThrow(m, e) {
+  // 扔向机甲身后：e 相对 m 的方向的反方向格
+  const dc = e.c - m.c, dr = e.r - m.r;
+  const tc = m.c - dc, tr = m.r - dr;
+  return inBounds(tc, tr); // 身后出边界 = 不能扔（无法选择）
+}
+
+function canGravityPull(m, e) {
+  const dc = Math.sign(e.c - m.c), dr = Math.sign(e.r - m.r);
+  const tc = e.c - dc, tr = e.r - dr;
+  if (!inBounds(tc, tr)) return false;
+  const t = getTile(tc, tr);
+  if (t === "water" || t === "mountain") return false;
+  if (getMechAt(tc, tr) || getEnemyAt(tc, tr) || getBuildingAt(tc, tr)) return false;
+  return true;
+}
+
+/* ============ 伤害 ============ */
+function damageMech(m, dmg, src) {
+  m.hp -= dmg;
+  if (m.hp <= 0) { m.hp = 0; m.alive = false; log(`☠ 机甲${m.def.name}被摧毁！（${src}）`, "bad"); }
+  else log(`💥 ${src}击中机甲${m.def.name} (-${dmg})`, "bad");
+}
+
+function killEnemy(e, why) {
+  e.alive = false;
+  log(`💀 ${e.def.name}${why}！`, "good");
+}
+
+function damageTile(c, r, dmg, src, isEnemySrc) {
+  const m = getMechAt(c, r);
+  if (m) { damageMech(m, dmg, src); return true; }
+  const e = getEnemyAt(c, r);
+  if (e) {
+    const real = isEnemySrc ? dmg + 1 : dmg; // 维克荷尔蒙：虫打虫+1
+    e.hp -= real;
+    log(`🐛 虫打虫！${src}击中${e.def.name} (-${real})${isEnemySrc ? " [荷尔蒙+1]" : ""}`, "boom");
+    if (e.hp <= 0) killEnemy(e, "被击杀");
+    return true;
+  }
+  const b = getBuildingAt(c, r);
+  if (b) {
+    b.hp -= dmg;
+    if (b.hp <= 0) {
+      b.alive = false;
+      STATE.power = Math.max(0, STATE.power - 1);
+      log(`🏚 ${src}摧毁了一座建筑！电力-1`, "bad");
+    }
+    return true;
+  }
+  return false; // 落空
+}
+
+/* ============ 强制位移（碰撞规则 D1-D6） ============ */
+function displaceEnemy(e, tc, tr, srcName) {
+  if (!inBounds(tc, tr)) { killEnemy(e, "被推出战场"); return; }
+  const t = getTile(tc, tr);
+  if (t === "water") { killEnemy(e, "落入水中"); return; }
+  if (t === "mountain") {
+    e.hp -= 1;
+    log(`🧱 ${e.def.name}撞到山壁！(-1)`, "boom");
+    if (e.hp <= 0) killEnemy(e, "撞死");
+    else updateIntentAfterMove(e);
+    return;
+  }
+  const tm = getMechAt(tc, tr);
+  const te = getEnemyAt(tc, tr);
+  if (tm || te) {
+    const target = tm ? tm : te;
+    e.hp -= 1;
+    if (target === tm) damageMech(tm, 1, "碰撞");
+    else { target.hp -= 1; log(`💥 碰撞！${e.def.name}撞到${target.def.name}，双方各-1`, "boom"); if (target.hp <= 0) killEnemy(target, "被撞死"); }
+    log(`💥 ${e.def.name}撞到${target.def.name}，自己-1`, "boom");
+    if (e.hp <= 0) killEnemy(e, "被撞死");
+    else updateIntentAfterMove(e);
+    return;
+  }
+  if (getBuildingAt(tc, tr)) {
+    // 撞建筑：敌人受1伤，建筑不毁（简化：只受伤）
+    e.hp -= 1;
+    log(`🏚 ${e.def.name}撞到建筑！(-1)`, "boom");
+    if (e.hp <= 0) killEnemy(e, "撞死");
+    else updateIntentAfterMove(e);
+    return;
+  }
+  // 空地：移动
+  e.c = tc; e.r = tr;
+  log(`💨 ${srcName}把${e.def.name}推到 (${tc},${tr})`, "evt");
+  updateIntentAfterMove(e);
+}
+
+/* 位移后意图处理：攻击方向锁定平移，移动重新计算（规则 E2/E4） */
+function updateIntentAfterMove(e) {
+  if (!e.intent) return;
+  if (e.intent.type === "attack") {
+    e.intent.tc = e.c + e.intent.offC;
+    e.intent.tr = e.r + e.intent.offR;
+  } else if (e.intent.type === "move") {
+    e.intent = calcIntent(e);
+  }
+}
+
+/* ============ 武器执行 ============ */
+function doJudoThrow(m, e) {
+  const dc = e.c - m.c, dr = e.r - m.r;
+  const tc = m.c - dc, tr = m.r - dr;
+  log(`🥋 ${m.def.name}抓住${e.def.name}扔向身后！`, "evt");
+  e.hp -= 1;
+  if (e.hp <= 0) { killEnemy(e, "被摔死"); }
+  else { displaceEnemy(e, tc, tr, m.def.name); }
+  m.acted = true;
+  render();
+}
+
+function doSiegeShot(m, tc, tr) {
+  log(`💣 ${m.def.name}发射集束弹 → (${tc},${tr})！`, "evt");
+  damageTile(tc, tr, 1, "集束弹");
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+  for (let i = 0; i < dirs.length; i++) {
+    const nc = tc + dirs[i][0], nr = tr + dirs[i][1];
+    if (!inBounds(nc, nr)) continue;
+    const e = getEnemyAt(nc, nr);
+    if (e) {
+      e.hp -= 1;
+      if (e.hp <= 0) { killEnemy(e, "被炸死"); continue; }
+      // 弹开1格（远离落点）
+      const oc = nc + dirs[i][0], orr = nr + dirs[i][1];
+      displaceEnemy(e, oc, orr, "集束弹");
+    }
+  }
+  m.acted = true;
+  render();
+}
+
+function doGravityPull(m, e) {
+  const dc = Math.sign(e.c - m.c), dr = Math.sign(e.r - m.r);
+  const tc = e.c - dc, tr = e.r - dr;
+  log(`🧲 ${m.def.name}把${e.def.name}拉近一格！`, "evt");
+  e.c = tc; e.r = tr;
+  updateIntentAfterMove(e);
+  m.acted = true;
+  render();
+}
+
+/* ============ 敌人 AI ============ */
+function nearestTarget(e) {
+  let best = null, bestD = 1e9;
+  const candidates = [];
+  mechs.filter(m => m.alive).forEach(m => candidates.push({ kind: "mech", obj: m }));
+  buildings.filter(b => b.alive).forEach(b => candidates.push({ kind: "building", obj: b }));
+  for (let i = 0; i < candidates.length; i++) {
+    const d = manhattan({ c: e.c, r: e.r }, { c: candidates[i].obj.c, r: candidates[i].obj.r });
+    if (d < bestD) { bestD = d; best = candidates[i]; }
+  }
+  return { t: best, d: bestD };
+}
+
+function firstInLine(e, dc, dr) {
+  // 弹道方向 dc/dr，返回第一个单位/建筑格
+  for (let d = 1; d <= e.def.range; d++) {
+    const nc = e.c + dc * d, nr = e.r + dr * d;
+    if (!inBounds(nc, nr)) return null;
+    if (getMechAt(nc, nr) || getEnemyAt(nc, nr) || getBuildingAt(nc, nr)) return { c: nc, r: nr };
+  }
+  return null;
+}
+
+function calcIntent(e) {
+  if (e.web) return { type: "wait", web: true };
+  const nt = nearestTarget(e);
+  if (!nt.t) return { type: "wait" };
+  const dist = nt.d;
+  if (e.type === "firefly") {
+    // 直线攻击：目标同 row 或同 col 且在射程内
+    if (e.c === nt.t.obj.c || e.r === nt.t.obj.r) {
+      const dc = Math.sign(nt.t.obj.c - e.c), dr = Math.sign(nt.t.obj.r - e.r);
+      if (dist <= e.def.range) {
+        const hit = firstInLine(e, dc, dr);
+        if (hit) return { type: "attack", tc: hit.c, tr: hit.r, offC: hit.c - e.c, offR: hit.r - e.r };
+      }
+    }
+  } else {
+    if (dist <= e.def.range) {
+      return { type: "attack", tc: nt.t.obj.c, tr: nt.t.obj.r, offC: nt.t.obj.c - e.c, offR: nt.t.obj.r - e.r };
+    }
+  }
+  // 移动
+  if (e.def.move > 0) {
+    const dc = Math.sign(nt.t.obj.c - e.c);
+    const dr = Math.sign(nt.t.obj.r - e.r);
+    const tries = [];
+    if (dc !== 0) tries.push({ dc, dr: 0 });
+    if (dr !== 0) tries.push({ dc: 0, dr });
+    for (let i = 0; i < tries.length; i++) {
+      const nc = e.c + tries[i].dc, nr = e.r + tries[i].dr;
+      if (inBounds(nc, nr) && walkableEnemy(nc, nr)) {
+        return { type: "move", tc: nc, tr: nr };
+      }
+    }
+  }
+  return { type: "wait" };
+}
+
+function walkableEnemy(c, r) {
+  const t = getTile(c, r);
+  if (t === "water" || t === "mountain") return false;
+  if (getMechAt(c, r) || getEnemyAt(c, r) || getBuildingAt(c, r)) return false;
+  return true;
+}
+
+function computeIntents() {
+  enemies.forEach(e => { if (e.alive) e.intent = calcIntent(e); });
+}
+
+function enemyAct() {
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
+    if (!e.alive) continue;
+    const it = e.intent;
+    if (!it) continue;
+    if (it.type === "wait") continue;
+    if (it.type === "move") {
+      if (inBounds(it.tc, it.tr) && walkableEnemy(it.tc, it.tr)) {
+        e.c = it.tc; e.r = it.tr;
+        log(`👣 ${e.def.name}移动到 (${e.c},${e.r})`, "evt");
+      }
+    } else if (it.type === "attack") {
+      // 方向锁定：打平移后的目标格（无论距离），命中与否看格上有没有单位
+      const hit = damageTile(it.tc, it.tr, e.def.atk, e.def.name, true);
+      if (!hit) log(`🌫 ${e.def.name}的攻击落空了！`, "evt");
+      if (e.type === "scorp") {
+        const m = getMechAt(it.tc, it.tr);
+        if (m && m.alive) { m.web = true; log(`🕸 ${e.def.name}网住了机甲${m.def.name}！`, "bad"); }
+      }
+    }
+  }
+}
+
+/* ============ Spawn 与拦截 ============ */
+function doSpawn() {
+  // 拦截：机甲站 spawn 点 → 阻止并受1伤
+  spawnPoints.forEach(p => {
+    const m = getMechAt(p.c, p.r);
+    if (m) {
+      log(`🛡 机甲${m.def.name}站在钻出点，阻止了敌人出现！(-1HP)`, "good");
+      damageMech(m, 1, "钻出拦截");
+    }
+  });
+  // 生成：随机一个未被占据的 spawn 点
+  const free = spawnPoints.filter(p => !getMechAt(p.c, p.r) && !getEnemyAt(p.c, p.r));
+  if (free.length) {
+    const p = free[Math.floor(Math.random() * free.length)];
+    const types = ["firefly", "scarab", "scorp"];
+    const tp = types[Math.floor(Math.random() * types.length)];
+    const def = ENEMY_DEFS[tp];
+    const e = { id: "e" + Date.now() + Math.floor(Math.random() * 1000), type: tp, def: def, c: p.c, r: p.r, hp: def.hp, alive: true, hidden: false, intent: null, web: false };
+    enemies.push(e);
+    log(`🕳 新的${def.name}从钻出点冒出来！(${p.c},${p.r})`, "bad");
+  }
+}
+
+/* ============ 回合/胜负 ============ */
+function startTurn() {
+  STATE.turn++;
+  if (STATE.turn > TURN_LIMIT) {
+    finish(true, "敌人撤退了！任务完成");
+    return;
+  }
+  STATE.phase = "player";
+  mechs.forEach(m => { if (m.alive) { m.moved = false; m.acted = false; m.web = false; } });
+  enemies.forEach(e => { if (e.alive) e.web = false; });
+  STATE.selectedId = null;
+  STATE.moveTargets = [];
+  STATE.attackTargets = [];
+  computeIntents();
+  log(`——— 第 ${STATE.turn} 回合 ———`, "evt");
+  render();
+}
+
+function endPlayerTurn() {
+  if (STATE.over || STATE.phase !== "player") return;
+  STATE.phase = "enemy";
+  STATE.selectedId = null;
+  STATE.moveTargets = [];
+  STATE.attackTargets = [];
+  render();
+  setTimeout(() => {
+    enemyAct();
+    doSpawn();
+    if (checkEnd()) return;
+    startTurn();
+  }, 500);
+}
+
+function checkEnd() {
+  const enemiesLeft = enemies.some(e => e.alive);
+  const mechsLeft = mechs.some(m => m.alive);
+  if (!enemiesLeft) { finish(true, "敌人全灭！"); return true; }
+  if (STATE.power <= 0) { finish(false, "电力耗尽，城市沦陷"); return true; }
+  if (!mechsLeft) { finish(false, "机甲全灭"); return true; }
+  return false;
+}
+
+function finish(won, why) {
+  STATE.over = true;
+  STATE.won = won;
+  const ov = document.getElementById("overlay");
+  ov.className = won ? "win show" : "lose show";
+  document.getElementById("ovTitle").textContent = won ? "胜 利" : "失 败";
+  document.getElementById("ovSub").textContent = why + ` · 第${STATE.turn}回合 · 电力 ${STATE.power}/${STATE.maxPower}`;
+  render();
+}
+
+/* ============ 日志 ============ */
+function log(msg, cls) {
+  STATE.log.push({ msg, cls });
+  if (STATE.log.length > MAX_LOG) STATE.log.shift();
+  const box = document.getElementById("log");
+  const div = document.createElement("div");
+  if (cls) div.className = cls;
+  div.textContent = msg;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  while (box.children.length > MAX_LOG) box.removeChild(box.firstChild);
+}
+
+/* ============ 渲染 ============ */
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+
+function drawDiamond(cx, cy, w, h, fill, stroke, lw) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - h / 2);
+  ctx.lineTo(cx + w / 2, cy);
+  ctx.lineTo(cx, cy + h / 2);
+  ctx.lineTo(cx - w / 2, cy);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); }
+}
+
+function drawUnitBlock(cx, cy, color, flash) {
+  const w = 30, h = 20;
+  ctx.fillStyle = color;
+  ctx.fillRect(cx - w / 2, cy - h / 2, w, h);
+  ctx.strokeStyle = "rgba(0,0,0,0.55)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(cx - w / 2, cy - h / 2, w, h);
+  if (flash) {
+    ctx.strokeStyle = flash;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(cx - w / 2 - 3, cy - h / 2 - 3, w + 6, h + 6);
+  }
+}
+
+function drawArrow(x1, y1, x2, y2) {
+  ctx.strokeStyle = "#ff1744";
+  ctx.fillStyle = "#ff1744";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 4) return;
+  const ux = dx / len, uy = dy / len;
+  const px = -uy, py = ux;
+  ctx.beginPath();
+  ctx.moveTo(x1 + ux * 12, y1 + uy * 12);
+  ctx.lineTo(x2 - ux * 14, y2 - uy * 14);
+  ctx.stroke();
+  const ax = x2 - ux * 14, ay = y2 - uy * 14;
+  ctx.beginPath();
+  ctx.moveTo(ax + ux * 12, ay + uy * 12);
+  ctx.lineTo(ax - ux * 2 + px * 8, ay - uy * 2 + py * 8);
+  ctx.lineTo(ax - ux * 2 - px * 8, ay - uy * 2 - py * 8);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawWeb(cx, cy) {
+  ctx.strokeStyle = "rgba(255,255,255,0.9)";
+  ctx.lineWidth = 1.5;
+  for (let a = 0; a < 4; a++) {
+    const ang = a * Math.PI / 4 + Math.PI / 8;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(ang) * 5, cy + Math.sin(ang) * 5);
+    ctx.lineTo(cx + Math.cos(ang) * 16, cy + Math.sin(ang) * 16);
+    ctx.stroke();
+  }
+}
+
+function render() {
+  ctx.clearRect(0, 0, CV_W, CV_H);
+  const sel = mechs.find(m => m.alive && m.id === STATE.selectedId) || null;
+
+  // 地面/地形/建筑
+  const cells = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) cells.push({ c, r, k: c + r });
+  cells.sort((a, b) => a.k - b.k);
+  cells.forEach(cell => {
+    const pt = gridToScreen(cell.c, cell.r);
+    const t = getTile(cell.c, cell.r);
+    if (t === "water") {
+      drawDiamond(pt.x, pt.y, TW, TH, "#1565c0", "#1e88e5");
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pt.x - 10, pt.y - 3);
+      ctx.quadraticCurveTo(pt.x, pt.y - 6, pt.x + 10, pt.y - 3);
+      ctx.stroke();
+    } else if (t === "mountain") {
+      drawDiamond(pt.x, pt.y, TW, TH, "#616161", "#424242");
+      ctx.fillStyle = "#757575";
+      ctx.beginPath();
+      ctx.moveTo(pt.x - 14, pt.y);
+      ctx.lineTo(pt.x, pt.y - 18);
+      ctx.lineTo(pt.x + 14, pt.y);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      drawDiamond(pt.x, pt.y, TW, TH, "#263238", "#37474f");
+    }
+  });
+
+  // 钻出点标记（黄色圈）
+  spawnPoints.forEach(p => {
+    const pt = gridToScreen(p.c, p.r);
+    ctx.strokeStyle = "rgba(251,192,45,0.8)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, 20, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(251,192,45,0.7)";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("钻", pt.x, pt.y + 4);
+  });
+
+  // 移动/攻击高亮
+  if (sel && STATE.phase === "player") {
+    if (!sel.moved) {
+      STATE.moveTargets.forEach(t => {
+        const pt = gridToScreen(t.c, t.r);
+        drawDiamond(pt.x, pt.y, TW, TH, "rgba(126,231,135,0.35)", "#7ee787");
+      });
+    }
+    if (!sel.acted) {
+      STATE.attackTargets.forEach(a => {
+        if (a.def) { // 敌人目标
+          const pt = gridToScreen(a.c, a.r);
+          drawDiamond(pt.x, pt.y, TW, TH, "rgba(255,23,68,0.4)", "#ff1744");
+        } else { // 攻城落点格子
+          const pt = gridToScreen(a.c, a.r);
+          drawDiamond(pt.x, pt.y, TW, TH, "rgba(255,152,0,0.3)", "#ff9800");
+        }
+      });
+    }
+  }
+
+  // 建筑
+  buildings.forEach(b => {
+    if (!b.alive) return;
+    const pt = gridToScreen(b.c, b.r);
+    drawUnitBlock(pt.x, pt.y - 8, "#fbc02d", null);
+  });
+
+  // 敌人
+  enemies.forEach(e => {
+    if (!e.alive) return;
+    const pt = gridToScreen(e.c, e.r);
+    const selFlash = (STATE.selectedEnemyId === e.id) ? "#ffffff" : null;
+    drawUnitBlock(pt.x, pt.y - 6, e.def.color, selFlash);
+    ctx.fillStyle = "#ffd7d7";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(e.def.name, pt.x, pt.y + 14);
+    if (e.web) drawWeb(pt.x, pt.y - 12);
+  });
+
+  // 意图箭头
+  if (STATE.phase === "player" && !STATE.over) {
+    enemies.forEach(e => {
+      if (!e.alive || !e.intent) return;
+      if (e.intent.type !== "attack") return;
+      const from = gridToScreen(e.c, e.r);
+      const to = gridToScreen(e.intent.tc, e.intent.tr);
+      drawArrow(from.x, from.y - 14, to.x, to.y - 14);
+      drawDiamond(to.x, to.y, TW, TH, "rgba(255,23,68,0.22)", "#ff1744");
+    });
+  }
+
+  // 机甲
+  mechs.forEach(m => {
+    if (!m.alive) return;
+    const pt = gridToScreen(m.c, m.r);
+    const flash = (sel && sel.id === m.id) ? "#ffd75e" : null;
+    drawUnitBlock(pt.x, pt.y - 6, m.def.color, flash);
+    ctx.fillStyle = "#cfe8ff";
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(m.def.name, pt.x, pt.y + 10);
+    ctx.font = "9px sans-serif";
+    ctx.fillStyle = "#ffd75e";
+    ctx.fillText(WEAPON_NAMES[m.def.weapon], pt.x, pt.y + 21);
+    if (m.web) drawWeb(pt.x, pt.y - 12);
+  });
+
+  document.getElementById("btnEnd").disabled = (STATE.over || STATE.phase !== "player");
+  updateHud(sel);
+}
+
+const WEAPON_NAMES = { judo: "过肩摔", siege: "集束弹", pull: "重力井" };
+
+function updateHud(sel) {
+  document.getElementById("powerVal").textContent = STATE.power + "/" + STATE.maxPower;
+  document.getElementById("turnVal").textContent = STATE.turn + "/" + TURN_LIMIT;
+  document.getElementById("enemyVal").textContent = enemies.filter(e => e.alive).length;
+  const info = document.getElementById("mechInfo");
+  const selE = enemies.find(e => e.alive && e.id === STATE.selectedEnemyId) || null;
+  if (selE) {
+    info.textContent = `🐛 ${selE.def.name}  HP ${selE.hp}/${selE.def.hp}  攻击${selE.def.atk} 射程${selE.def.range}  ·  ${selE.def.desc}`;
+    return;
+  }
+  if (sel) {
+    const status = !sel.moved ? "待移动" : (!sel.acted ? "待攻击" : "已行动");
+    info.textContent = `${sel.def.name} [${WEAPON_NAMES[sel.def.weapon]}] HP ${sel.hp}/${sel.maxHp} · ${status}`;
+  } else {
+    info.textContent = "";
+  }
+}
+
+/* ============ 交互 ============ */
+cv.addEventListener("click", (ev) => {
+  if (STATE.over || STATE.phase !== "player") return;
+  const rect = cv.getBoundingClientRect();
+  const mx = ev.clientX - rect.left;
+  const my = ev.clientY - rect.top;
+  const g = screenToGrid(mx, my);
+  if (!g) return;
+
+  const sel = mechs.find(m => m.alive && m.id === STATE.selectedId) || null;
+
+  // 1. 已选中机甲未行动：攻击
+  if (sel && !sel.acted) {
+    if (sel.def.weapon === "siege") {
+      const t = STATE.attackTargets.find(a => !a.def && a.c === g.c && a.r === g.r);
+      if (t) { doSiegeShot(sel, t.c, t.r); checkEnd(); return; }
+    } else {
+      const t = STATE.attackTargets.find(a => a.def && a.c === g.c && a.r === g.r);
+      if (t) {
+        if (sel.def.weapon === "judo") doJudoThrow(sel, t);
+        else if (sel.def.weapon === "pull") doGravityPull(sel, t);
+        checkEnd();
+        return;
+      }
+    }
+  }
+
+  // 2. 点击敌人 → 显示信息
+  const eAt = getEnemyAt(g.c, g.r);
+  if (eAt) {
+    STATE.selectedId = null;
+    STATE.selectedEnemyId = eAt.id;
+    STATE.moveTargets = [];
+    STATE.attackTargets = [];
+    render();
+    return;
+  }
+
+  // 3. 移动
+  if (sel && !sel.moved) {
+    const mv = STATE.moveTargets.find(t => t.c === g.c && t.r === g.r);
+    if (mv) {
+      sel.c = mv.c; sel.r = mv.r;
+      sel.moved = true;
+      STATE.moveTargets = [];
+      STATE.attackTargets = attackTargetsFor(sel);
+      render();
+      return;
+    }
+    const other = getMechAt(g.c, g.r);
+    if (other && other.id !== sel.id && !other.acted) { selectMech(other); return; }
+    STATE.selectedId = null;
+    STATE.selectedEnemyId = null;
+    STATE.moveTargets = [];
+    STATE.attackTargets = [];
+    render();
+    return;
+  }
+
+  // 4. 未选中：点机甲选中
+  const m = getMechAt(g.c, g.r);
+  if (m && !m.acted) { selectMech(m); return; }
+
+  // 5. 空白取消
+  STATE.selectedId = null;
+  STATE.selectedEnemyId = null;
+  STATE.moveTargets = [];
+  STATE.attackTargets = [];
+  render();
+});
+
+function selectMech(m) {
+  STATE.selectedId = m.id;
+  STATE.selectedEnemyId = null;
+  STATE.moveTargets = [];
+  STATE.attackTargets = [];
+  if (!m.acted) {
+    if (!m.moved) {
+      STATE.moveTargets = m.web ? [] : bfsMove(m.c, m.r, m.def.move);
+    }
+    STATE.attackTargets = attackTargetsFor(m);
+  }
+  render();
+}
+
+document.getElementById("btnEnd").addEventListener("click", endPlayerTurn);
+document.getElementById("btnRestart").addEventListener("click", () => location.reload());
+document.getElementById("btnAgain").addEventListener("click", () => location.reload());
+
+/* ============ 启动 ============ */
+buildLevel();
+log("⚔ 钢铁柔道小队出动！守住建筑，撑过5回合敌人撤退。", "evt");
+computeIntents();
+render();
+</script>
+</body>
+</html>

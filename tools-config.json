@@ -100,6 +100,14 @@
             "path": "/tools/pages/tools/bidirectional-links.html",
             "tag": "Education",
             "description": "Obsidian 双向链接可视化：AI 如何承担链接维护成本"
+        },
+        {
+            "id": "manganese-silicon-hedge",
+            "name": "锰硅成本与期现套保",
+            "icon": "⛏️",
+            "path": "/tools/pages/tools/manganese-silicon-hedge.html",
+            "tag": "Tools",
+            "description": "锰硅（硅锰合金）成本结构分析与期现套保指南"
         }
     ]
 }

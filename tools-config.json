@@ -108,6 +108,14 @@
             "path": "/tools/pages/tools/manganese-silicon-hedge.html",
             "tag": "Tools",
             "description": "锰硅（硅锰合金）成本结构分析与期现套保指南"
+        },
+        {
+            "id": "flowchart-editor",
+            "name": "流程图编辑器",
+            "icon": "📊",
+            "path": "/tools/pages/tools/flowchart-editor.html",
+            "tag": "Tools",
+            "description": "可视化拖拽流程图编辑器：多用户图库、自动保存、导出 PNG/JSON"
         }
     ]
 }

@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full bg-slate-900">
+<!-- 共享导航组件 (tools 站统一顶部导航) -->
+<script src="../../assets/js/nav-component.js"></script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>流程图编辑器 - 多用户版</title>
+  <!-- 样式库与图标 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- AntV X6 核心绘图库 (纯前端 CDN, UMD 文件为 dist/index.js) -->
+  <!-- 注意: 2.x 版本的样式文件是 dist/index.css (旧文档里的 dist/x6.css 已不存在) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@antv/x6@2.18.1/dist/index.css">
+  <script src="https://cdn.jsdelivr.net/npm/@antv/x6@2.18.1/dist/index.js"
+          onerror="this.remove();var s=document.createElement('script');s.src='https://unpkg.com/@antv/x6@2.18.1/dist/index.js';document.head.appendChild(s);"></script>
+  <!-- X6 选中插件 (2.x 起 selection 独立成插件, 必须用 graph.use 初始化; 否则节点/线无法选中删除) -->
+  <script src="https://cdn.jsdelivr.net/npm/@antv/x6-plugin-selection@2.2.2/dist/index.js"
+          onerror="this.remove();var s=document.createElement('script');s.src='https://unpkg.com/@antv/x6-plugin-selection@2.2.2/dist/index.js';document.head.appendChild(s);"></script>
+  <!-- X6 导出插件 (2.x 起 toPNG/toSVG 在独立插件里, 不引入则"导出图片"按钮报错) -->
+  <script src="https://cdn.jsdelivr.net/npm/@antv/x6-plugin-export@2.1.6/dist/index.js"
+          onerror="this.remove();var s=document.createElement('script');s.src='https://unpkg.com/@antv/x6-plugin-export@2.1.6/dist/index.js';document.head.appendChild(s);"></script>
+  <style>
+    /* tools 站导航组件会给 body 加 padding-top:56px; border-box 保证 h-full 不溢出 */
+    body.has-tools-nav { box-sizing: border-box; }
+    ::-webkit-scrollbar { height: 6px; width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    
+    /* X6 节点 hover 效果
+       注意: 千万不要给 .x6-node 加 transform/transition —— X6 靠 transform 属性定位节点，
+       CSS transform 会覆盖内联定位，导致节点跳位、hover 反复触发 (表现为一直晃)。
+       hover 效果必须放在内部 .node-container 上。 */
+    .x6-node .node-container { transition: transform 0.2s ease; }
+    .x6-node:hover .node-container { transform: translateY(-2px); }
+
+    /* 端口小圆点: 默认隐藏, 节点 hover / 选中 / 开始连线时显示 */
+    .x6-port-body { opacity: 0; transition: opacity 0.15s ease; }
+    .x6-node:hover .x6-port-body,
+    .x6-node-selected .x6-port-body,
+    .x6-port-body.x6-available-magnet { opacity: 1; }
+    /* 拖箭头吸附到端口时: 端口显示并变绿 */
+    .x6-port-body.x6-adsorbed-magnet { opacity: 1; stroke: #16a34a !important; fill: #16a34a !important; }
+    
+    /* 选中的节点/连线高亮 */
+    .x6-node-selected .node-container {
+      ring: 2px;
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body class="h-full font-sans text-slate-800 bg-slate-100 flex flex-col justify-between overflow-hidden">
+
+  <!-- 1. 顶部导航与操作栏 -->
+  <header class="bg-white border-b border-slate-200 px-6 py-3 flex-none flex flex-wrap justify-between items-center z-20 shadow-sm gap-4">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-slate-900 rounded-xl text-white shadow-md flex items-center justify-center">
+        <i class="fa-solid fa-diagram-project text-lg text-blue-400"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 id="appTitle" class="text-base font-bold text-slate-900">流程图编辑器</h1>
+          <span class="px-2 py-0.5 text-[10px] font-bold bg-green-50 text-green-600 border border-green-200 rounded-full">可视化拖拽 • 双击改字 • 自动保存</span>
+        </div>
+        <p id="appSubtitle" class="text-xs text-slate-500 mt-0.5">输入用户名进入，你的图自动保存在本机浏览器</p>
+      </div>
+    </div>
+
+    <!-- 实用功能按钮 -->
+    <div class="flex items-center gap-3 text-xs font-medium">
+      <span id="userChip" class="items-center gap-1.5 px-2.5 py-1.5 bg-slate-900 text-white rounded-full text-[10px] font-bold cursor-pointer hover:bg-slate-700 transition-colors" style="display:none" title="点击切换用户">
+        <i class="fa-solid fa-user"></i> <span id="userChipName"></span>
+      </span>
+
+      <button id="btnSave" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+        <i class="fa-solid fa-floppy-disk"></i> 保存
+      </button>
+      <button id="btnLibrary" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-colors flex items-center gap-1.5">
+        <i class="fa-solid fa-book"></i> 我的图库
+      </button>
+
+      <button id="btnExportJson" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-colors flex items-center gap-1.5">
+        <i class="fa-solid fa-download"></i> 导出 JSON
+      </button>
+      <button id="btnEditJson" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-colors flex items-center gap-1.5">
+        <i class="fa-solid fa-code"></i> 编辑 JSON
+      </button>
+      <button id="btnImportJson" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-colors flex items-center gap-1.5">
+        <i class="fa-solid fa-upload"></i> 导入 JSON
+      </button>
+      <input type="file" id="fileInput" accept=".json" class="hidden">
+      
+      <button id="btnExportPng" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+        <i class="fa-solid fa-image"></i> 导出图片 (PNG)
+      </button>
+
+      <button id="btnToggleSteps" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-colors flex items-center gap-1.5">
+        <i class="fa-solid fa-list-ol"></i> 序号：关
+      </button>
+      <button id="btnToggleArrow" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-colors flex items-center gap-1.5" title="选中一条线后点击, 循环切换箭头方向">
+        <i class="fa-solid fa-arrow-right-arrow-left"></i> 箭头方向
+      </button>
+
+      <!-- 视图控制 -->
+      <div class="flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200 gap-1 ml-2">
+        <button id="zoomOut" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-minus w-3.5 h-3.5 flex items-center justify-center"></i></button>
+        <button id="zoomReset" class="px-2 py-1 hover:bg-white rounded text-[11px] font-semibold text-slate-600">自适应</button>
+        <button id="zoomIn" class="p-1.5 hover:bg-white rounded text-slate-600"><i class="fa-solid fa-plus w-3.5 h-3.5 flex items-center justify-center"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. 主体编辑区域 (左侧节点库 + 右侧画布) -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- 左侧可拖拽节点面板 -->
+    <aside class="w-56 bg-white border-r border-slate-200 p-4 flex flex-col gap-4 flex-none z-10 shadow-sm overflow-y-auto">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">拖拽节点至画布</div>
+      
+      <!-- 主流程节点模板 -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-semibold text-slate-600">主流程节点</span>
+        <div drag-type="main" class="cursor-grab active:cursor-grabbing p-2.5 bg-white border-2 border-slate-800 rounded-xl flex items-center justify-center shadow-sm hover:border-blue-500 transition-colors">
+          <span class="text-xs font-bold text-slate-800">主节点 (圆角)</span>
+        </div>
+      </div>
+
+      <!-- 分支业务节点模板 -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-semibold text-slate-600">分支/状态节点</span>
+        <div drag-type="branch-sky" class="cursor-grab active:cursor-grabbing p-2 bg-sky-50 border border-sky-400 rounded-xl flex items-center justify-center shadow-sm">
+          <span class="text-xs font-bold text-sky-900">移仓节点 (蓝色)</span>
+        </div>
+        <div drag-type="branch-amber" class="cursor-grab active:cursor-grabbing p-2 bg-amber-50 border border-amber-400 rounded-xl flex items-center justify-center shadow-sm">
+          <span class="text-xs font-bold text-amber-900">资金节点 (黄色)</span>
+        </div>
+        <div drag-type="branch-emerald" class="cursor-grab active:cursor-grabbing p-2 bg-emerald-50 border border-emerald-400 rounded-xl flex items-center justify-center shadow-sm">
+          <span class="text-xs font-bold text-emerald-900">付款节点 (绿色)</span>
+        </div>
+        <div drag-type="branch-rose" class="cursor-grab active:cursor-grabbing p-2 bg-rose-50 border border-rose-300 rounded-xl flex items-center justify-center shadow-sm">
+          <span class="text-xs font-bold text-rose-900">出仓节点 (粉色)</span>
+        </div>
+      </div>
+
+      <!-- 节点配色 -->
+      <div class="flex flex-col gap-2">
+        <span class="text-xs font-semibold text-slate-600">节点配色</span>
+        <div class="flex flex-wrap gap-1.5" id="colorPalette"></div>
+        <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+          <input type="color" id="customColor" value="#f0f9ff" class="w-6 h-6 rounded cursor-pointer border border-slate-300 p-0">
+          自定义颜色
+        </label>
+        <p class="text-[11px] text-slate-400 leading-snug">选中节点后点色块改色；未选中时设为新建节点默认色</p>
+      </div>
+
+      <div class="mt-auto p-3 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-500 flex flex-col gap-1">
+        <span class="font-bold text-slate-700"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>快捷提示:</span>
+        <span>• 点击节点/线按 <kbd class="px-1 bg-white border rounded">Delete</kbd> 删除</span>
+        <span>• 悬停在节点边缘拉出连线, 拖到另一条线上可"挂载"(表示过程中做的事)</span>
+        <span>• 点击连线可选择切换实/虚线</span>
+      </div>
+    </aside>
+
+    <!-- 右侧 X6 画布区域 -->
+    <main class="flex-1 bg-slate-50 relative overflow-hidden" id="canvasContainer">
+      <div id="container" class="w-full h-full"></div>
+    </main>
+
+  </div>
+
+  <!-- 3. JSON 编辑模态框 (必须在脚本之前, 否则脚本里 getElementById 拿不到) -->
+  <div id="jsonEditorModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" id="jsonEditorBackdrop"></div>
+    <div class="absolute inset-0 m-auto w-[85vw] h-[82vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
+      <!-- 标题栏 -->
+      <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900 text-white flex-none">
+        <div class="flex items-center gap-2 text-sm font-bold">
+          <i class="fa-solid fa-code text-blue-400"></i> 编辑 JSON
+          <span class="text-[10px] font-normal text-slate-400 ml-1">Ctrl+Enter 快速应用 | Esc 关闭</span>
+        </div>
+        <button id="jsonEditorClose" class="text-slate-300 hover:text-white text-lg leading-none px-1">&times;</button>
+      </div>
+      <!-- 字段说明 -->
+      <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 leading-relaxed flex-none">
+        <span class="font-bold text-slate-700">可改:</span>
+        data.label (节点名) | data.colors (颜色) | position.x / position.y (位置) | labels[0].attrs.text.text (连线文字) |
+        <span class="font-bold text-slate-700">挂载:</span> source / target 的 cell 可写连线 id (如 main-1), 再用 anchor.args.ratio 定比例 (0.33 = 左1/3) |
+        <span class="font-bold text-red-500">勿动:</span> 节点 id / shape (连线引用依赖)
+      </div>
+      <textarea id="jsonEditorText" class="flex-1 w-full p-4 font-mono text-xs leading-relaxed text-slate-800 bg-white outline-none resize-none" spellcheck="false"></textarea>
+      <div id="jsonEditorError" class="hidden px-4 py-2 bg-red-50 text-red-600 text-xs font-mono border-t border-red-200 flex-none whitespace-pre-wrap"></div>
+      <!-- 操作栏 -->
+      <div class="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex-none">
+        <button id="jsonEditorFormat" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 text-xs font-medium">格式化</button>
+        <div class="flex-1"></div>
+        <button id="jsonEditorCancel" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-300 text-xs font-medium">取消</button>
+        <button id="jsonEditorApply" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm text-xs font-bold">应用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.5 登录浮层 (点顶部用户 chip 才出现, 输入用户名切换; 默认隐藏) -->
+  <div id="loginOverlay" class="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm items-center justify-center" style="display:none">
+    <div class="bg-white rounded-2xl shadow-2xl w-[380px] p-6 flex flex-col gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-slate-900 rounded-xl text-white shadow-md flex items-center justify-center">
+          <i class="fa-solid fa-diagram-project text-lg text-blue-400"></i>
+        </div>
+        <div>
+          <div class="text-base font-bold text-slate-900">流程图编辑器</div>
+          <div class="text-xs text-slate-500">输入用户名，加载你保存的图</div>
+        </div>
+      </div>
+      <div>
+        <input id="loginInput" type="text" placeholder="输入用户名，如 ZDD" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors">
+      </div>
+      <button id="loginBtn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-colors">
+        <i class="fa-solid fa-right-to-bracket mr-1"></i>进入
+      </button>
+      <div id="loginLastUser" class="hidden text-xs text-slate-500"></div>
+      <p class="text-[11px] text-slate-400 leading-relaxed">用户名对应你自己的图库。首次使用输一个名字即可，之后浏览器会自动记住。</p>
+    </div>
+  </div>
+
+  <!-- 3.6 我的图库浮层 -->
+  <div id="libraryModal" class="fixed inset-0 z-[65] hidden">
+    <div class="absolute inset-0 bg-black/40" id="libraryBackdrop"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] max-h-[72vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-2.5 bg-slate-900 text-white flex-none">
+        <div class="flex items-center gap-2 text-sm font-bold">
+          <i class="fa-solid fa-book text-blue-400"></i> <span id="libraryTitle">我的图库</span>
+        </div>
+        <button id="libraryClose" class="text-slate-300 hover:text-white text-lg leading-none px-1">&times;</button>
+      </div>
+      <div id="libraryList" class="flex-1 overflow-y-auto p-3 flex flex-col gap-2"></div>
+      <div class="px-3 py-2.5 border-t border-slate-200 flex-none">
+        <button id="libraryNew" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm transition-colors">
+          <i class="fa-solid fa-plus mr-1"></i>新建图
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 核心交互与流程初始化脚本 -->
+  <script>
+    const { Graph, Shape } = X6;
+    const { Selection } = X6PluginSelection;
+    const { Export } = X6PluginExport;
+    let showSteps = false; // 节点序号 badge 显示开关 (默认关闭, 工具栏按钮切换)
+
+    // 1. 初始化 X6 画布
+    const graph = new Graph({
+      container: document.getElementById('container'),
+      autoResize: true,
+      grid: { size: 10, visible: true, type: 'dot', args: { color: '#cbd5e1' } },
+      panning: { enabled: true, eventTypes: ['leftMouseDown'] }, // 允许按住拖拽画布
+      mousewheel: { enabled: true, modifiers: ['ctrl', 'meta'] }, // Ctrl+滚轮缩放
+      connecting: {
+        snap: true, // 自动吸附
+        allowBlank: true, // 允许拖线到空白处 (一端自由, 移动节点时自动跟随调整)
+        allowLoop: false,
+        allowEdge: true, // 允许把线连到另一条线上 (边连边)
+        highlight: true,
+        router: 'normal', // 直线路由: 两点之间直接连线 (收20%款→系统出金 那种直线)
+        connector: 'normal', // 直线连接, 无圆角无折线
+        connectionPoint: 'boundary',
+        createEdge() {
+          return new Shape.Edge({
+            attrs: {
+              line: {
+                stroke: '#334155',
+                strokeWidth: 2,
+                targetMarker: { name: 'block', width: 8, height: 6 }
+              }
+            },
+            // 注意: 不要加 source-arrowhead/target-arrowhead 工具, 它们会在两端渲染黑色箭头手柄
+            // (游离线的拖拽吸附用自定义蓝色手柄实现, 见 keepFreeEdge)
+            tools: [{ name: 'edge-editor' }]
+          });
+        }
+      },
+      // 启用选中: 点击节点/线可选中, 配合 Delete 删除
+      // 注意: X6 2.x 的选中是独立插件 (@antv/x6-plugin-selection), 需 graph.use 初始化
+      // 只配置"拖箭头吸附到端口"时的高亮 (className, 视觉由 CSS 控制),
+      // 不配置 magnetAvailable, 避免连线时所有节点端口变蓝
+      highlighting: {
+        magnetAdsorbed: { name: 'className', args: { className: 'x6-adsorbed-magnet' } }
+      }
+    });
+
+    // 初始化选中插件
+    graph.use(new Selection({
+      enabled: true,
+      multiple: true,
+      rubberband: false,
+      showNodeSelectionBox: true,
+      showEdgeSelectionBox: true
+    }));
+
+    // 初始化导出插件 (提供 toPNG/toSVG, 否则"导出图片"按钮报错)
+    graph.use(new Export());
+
+    // 网格吸附 (默认开启): 拖动节点时对齐到 10px 网格线
+    graph.on('node:moving', ({ node, x, y }) => {
+      const gs = 10;
+      const sx = Math.round(x / gs) * gs;
+      const sy = Math.round(y / gs) * gs;
+      if (sx !== x || sy !== y) node.position(sx, sy);
+    });
+
+    // 游离线跟随节点平移: 节点移动时, 以它为起点的游离线(自由端是坐标点)整体同步平移,
+    // 末端的箭头跟着节点一起走
+    graph.on('node:change:position', ({ node, current, previous }) => {
+      if (!previous || !current) return;
+      const dx = current.x - previous.x;
+      const dy = current.y - previous.y;
+      if (!dx && !dy) return;
+      graph.getEdges().forEach(e => {
+        if (e.getSourceCellId() === node.id) {
+          const t = e.getTarget();
+          if (t && typeof t.x === 'number' && typeof t.y === 'number') {
+            e.setTarget({ x: t.x + dx, y: t.y + dy });
+          }
+        }
+      });
+    });
+
+    // 用户拖线创建的新边: 直线化 + 游离线(拖到空白)的选节点弹窗
+    // 注意: edge:connected 只在连到节点/线时触发, 拖到空白(坐标点 target)不触发, 所以用 edge:added + options.ui 判断
+    graph.on('edge:added', ({ edge, options }) => {
+      if (!edge || !(options && options.ui)) return;
+      setTimeout(() => {
+        // 1. 清除拖线产生的折点, 保证默认直线
+        if (edge.getVertices().length) edge.setVertices([]);
+        // 2. 游离线 (target 是坐标点): 弹出节点选择器
+        const t = edge.getTarget();
+        if (t && typeof t.x === 'number' && typeof t.y === 'number') {
+          showNodePicker(edge);
+        }
+      }, 0);
+    });
+
+    // hover 线时显示两端手柄 (可拖拽重连/变自由)
+    graph.on('edge:mouseenter', ({ edge }) => {
+      clearTimeout(hideHandleTimer);
+      showEdgeHandles(edge);
+    });
+    graph.on('edge:mouseleave', () => {
+      hideHandleTimer = setTimeout(() => { if (!handleDragging) removeHandles(); }, 300);
+    });
+
+    // ---- 游离线处理: 新节点样式选择器 ----
+    let nodePickerEl = null;
+    let nodePickerEdge = null;
+    const NODE_BG_MAP = {
+      'bg-sky-50': '#f0f9ff', 'bg-amber-50': '#fffbeb', 'bg-emerald-50': '#ecfdf5',
+      'bg-rose-50': '#fff1f2', 'bg-indigo-50': '#eef2ff', 'bg-white': '#ffffff'
+    };
+    const NODE_BORDER_MAP = {
+      'bg-sky-50': '#38bdf8', 'bg-amber-50': '#fbbf24', 'bg-emerald-50': '#34d399',
+      'bg-rose-50': '#fda4af', 'bg-indigo-50': '#a5b4fc', 'bg-white': '#94a3b8'
+    };
+    // 新节点样式模板 (与左侧面板一致, 无图标)
+    const NODE_TEMPLATES = [
+      { name: '主节点', desc: '白底 · 主流程', w: 90, h: 55, data: { label: '新主节点' } },
+      { name: '移仓节点', desc: '蓝色 · 移仓', w: 90, h: 55, data: { label: '移仓节点', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900', iconClass: 'text-sky-600' } },
+      { name: '资金节点', desc: '黄色 · 资金', w: 90, h: 55, data: { label: '资金节点', bgClass: 'bg-amber-50', borderClass: 'border border-amber-400', textClass: 'text-amber-900', iconClass: 'text-amber-600' } },
+      { name: '付款节点', desc: '绿色 · 付款', w: 90, h: 55, data: { label: '付款节点', bgClass: 'bg-emerald-50', borderClass: 'border border-emerald-400', textClass: 'text-emerald-900', iconClass: 'text-emerald-600' } },
+      { name: '出仓节点', desc: '粉色 · 出仓', w: 90, h: 55, data: { label: '出仓节点', bgClass: 'bg-rose-50', borderClass: 'border border-rose-300', textClass: 'text-rose-900', iconClass: 'text-rose-600' } }
+    ];
+    function closeNodePicker() {
+      if (nodePickerEl) { nodePickerEl.remove(); nodePickerEl = null; }
+      const bd = document.getElementById('nodePickerBackdrop');
+      if (bd) bd.remove();
+      nodePickerEdge = null;
+    }
+    // 通用端点手柄: hover 线时两端显示, 可拖拽重连到节点或拖到空白变自由
+    // (X6 2.18.1 的 arrowhead 工具无法渲染, 用自定义手柄实现)
+    let handleEls = { source: null, target: null };
+    let handleEdge = null;
+    let handleLoop = null;
+    let handleDragging = false;
+    let dragEnd = 'target';
+    let snapTarget = null;
+    let hideHandleTimer = null;
+
+    function removeHandles() {
+      if (handleLoop) { cancelAnimationFrame(handleLoop); handleLoop = null; }
+      if (handleEls.source) { handleEls.source.remove(); handleEls.source = null; }
+      if (handleEls.target) { handleEls.target.remove(); handleEls.target = null; }
+      handleEdge = null;
+      snapTarget = null;
+      handleDragging = false;
+    }
+    function makeHandleEl(end) {
+      const el = document.createElement('div');
+      el.dataset.end = end;
+      el.title = '拖动端点: 靠近节点可吸附连接, 拖到空白处变自由端点';
+      el.style.cssText = 'position:fixed;width:16px;height:16px;border-radius:50%;background:#3b82f6;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:grab;z-index:45;transform:translate(-50%,-50%);';
+      el.addEventListener('mousedown', (e) => onHandleDown(e, end));
+      // 手柄上停留时不要隐藏
+      el.addEventListener('mouseenter', () => clearTimeout(hideHandleTimer));
+      el.addEventListener('mouseleave', () => {
+        hideHandleTimer = setTimeout(() => { if (!handleDragging) removeHandles(); }, 300);
+      });
+      document.body.appendChild(el);
+      return el;
+    }
+    // 显示某条线的两端手柄
+    function showEdgeHandles(edge) {
+      removeHandles();
+      handleEdge = edge;
+      handleEls.source = makeHandleEl('source');
+      handleEls.target = makeHandleEl('target');
+      const loop = () => {
+        if (!handleEdge || !graph.getCellById(handleEdge.id)) { removeHandles(); return; }
+        if (!handleDragging) {
+          const v = graph.findViewByCell(handleEdge);
+          if (v && v.container) {
+            const path = v.container.querySelector('path[stroke-width="10"]') || v.container.querySelector('path');
+            if (path) {
+              const len = path.getTotalLength();
+              if (len > 0) {
+                const s = graph.localToClient(path.getPointAtLength(0));
+                const t = graph.localToClient(path.getPointAtLength(len));
+                if (handleEls.source) { handleEls.source.style.left = s.x + 'px'; handleEls.source.style.top = s.y + 'px'; }
+                if (handleEls.target) { handleEls.target.style.left = t.x + 'px'; handleEls.target.style.top = t.y + 'px'; }
+              }
+            }
+          }
+        }
+        handleLoop = requestAnimationFrame(loop);
+      };
+      handleLoop = requestAnimationFrame(loop);
+    }
+    // 保持游离线: 箭头保持在末端, 显示可拖手柄
+    function keepFreeEdge(edge) {
+      showEdgeHandles(edge);
+    }
+    function onHandleDown(e, end) {
+      if (!handleEdge) return;
+      e.preventDefault();
+      e.stopPropagation();
+      clearTimeout(hideHandleTimer);
+      handleDragging = true;
+      dragEnd = end;
+      const el = handleEls[end];
+      if (el) el.style.cursor = 'grabbing';
+      document.addEventListener('mousemove', onHandleMove);
+      document.addEventListener('mouseup', onHandleUp);
+      onHandleMove(e);
+    }
+    function onHandleMove(e) {
+      if (!handleDragging) return;
+      const el = handleEls[dragEnd];
+      if (el) {
+        el.style.left = e.clientX + 'px';
+        el.style.top = e.clientY + 'px';
+      }
+      // 找鼠标附近的节点端口 (吸附检测)
+      const local = graph.clientToLocal({ x: e.clientX, y: e.clientY });
+      const target = findNearestPort(local, 60);
+      if (snapTarget && snapTarget.el !== (target && target.el)) resetPortStyle(snapTarget.el);
+      snapTarget = target;
+      if (target) highlightPort(target.el);
+    }
+    function onHandleUp(e) {
+      document.removeEventListener('mousemove', onHandleMove);
+      document.removeEventListener('mouseup', onHandleUp);
+      if (!handleDragging) return;
+      handleDragging = false;
+      const el = handleEls[dragEnd];
+      if (el) el.style.cursor = 'grab';
+      const edge = handleEdge;
+      if (!edge) return;
+      if (snapTarget) {
+        // 吸附到端口 → 重连该端
+        edge.setTerminal(dragEnd, { cell: snapTarget.nodeId, port: snapTarget.portId });
+        resetPortStyle(snapTarget.el);
+      } else {
+        // 拖到空白 → 该端变自由坐标点
+        const local = graph.clientToLocal({ x: e.clientX, y: e.clientY });
+        edge.setTerminal(dragEnd, { x: Math.round(local.x), y: Math.round(local.y) });
+      }
+      snapTarget = null;
+    }
+    function findNearestPort(point, radius) {
+      let best = null, bestDist = Infinity;
+      graph.getNodes().forEach(node => {
+        const view = graph.findViewByCell(node);
+        if (!view || !view.container) return;
+        view.container.querySelectorAll('.x6-port-body[magnet="true"]').forEach(portEl => {
+          const b = view.getBBoxOfElement(portEl);
+          const c = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+          const d = Math.hypot(c.x - point.x, c.y - point.y);
+          if (d < radius && d < bestDist) {
+            bestDist = d;
+            best = { nodeId: node.id, portId: portEl.getAttribute('port') || 'top', el: portEl };
+          }
+        });
+      });
+      return best;
+    }
+    function highlightPort(el) {
+      el.style.stroke = '#16a34a';
+      el.style.fill = '#16a34a';
+      el.style.opacity = '1';
+    }
+    function resetPortStyle(el) {
+      el.style.stroke = '';
+      el.style.fill = '';
+      el.style.opacity = '';
+    }
+    function showNodePicker(edge) {
+      closeNodePicker();
+      nodePickerEdge = edge;
+      // 箭头保持在末端 (target), 不移动
+
+      // 遮罩: 点击遮罩 = 保持自由线
+      const backdrop = document.createElement('div');
+      backdrop.id = 'nodePickerBackdrop';
+      backdrop.className = 'fixed inset-0 z-40 bg-black/20';
+      backdrop.onclick = () => { closeNodePicker(); keepFreeEdge(edge); };
+
+      const el = document.createElement('div');
+      el.className = 'fixed z-50 bg-white rounded-lg shadow-xl border border-slate-300 flex flex-col overflow-hidden';
+      // 弹窗紧贴线的末端(箭头)位置出现, 鼠标松手后几乎不用移动就能点选
+      const elW = 300, elH = 280;
+      let pos = { x: window.innerWidth / 2, y: window.innerHeight / 3 };
+      const tp = edge.getTarget();
+      if (tp && typeof tp.x === 'number' && typeof tp.y === 'number') {
+        pos = graph.localToClient(tp);
+      }
+      // 弹窗左上角放在箭头右下方一点 (鼠标就在箭头处, 就近弹出)
+      const left = Math.min(Math.max(8, pos.x + 12), window.innerWidth - elW - 8);
+      const top = Math.min(Math.max(8, pos.y + 12), window.innerHeight - elH - 8);
+      el.style.cssText = `left:${left}px;top:${top}px;width:${elW}px;max-height:70vh;`;
+
+      const head = document.createElement('div');
+      head.className = 'px-3 py-2 bg-slate-900 text-white text-xs font-bold flex items-center justify-between';
+      head.innerHTML = '<span>选择新节点样式</span><span class="text-slate-400 text-[10px] font-normal">Esc / 点外部 = 保持自由线</span>';
+
+      const list = document.createElement('div');
+      list.className = 'flex-1 overflow-y-auto p-2 flex flex-col gap-1';
+
+      NODE_TEMPLATES.forEach(tmpl => {
+        const bg = NODE_BG_MAP[tmpl.data.bgClass] || '#ffffff';
+        const bd = NODE_BORDER_MAP[tmpl.data.bgClass] || '#94a3b8';
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'flex items-center gap-2.5 px-2.5 py-2 text-left rounded hover:bg-blue-50 transition-colors border border-slate-100';
+        item.innerHTML = `
+          <span style="width:34px;height:24px;border-radius:6px;background:${bg};border:2px solid ${bd};flex:none"></span>
+          <span class="flex flex-col">
+            <span class="text-xs font-bold text-slate-800">${tmpl.name}</span>
+            <span class="text-[10px] text-slate-400">${tmpl.desc}</span>
+          </span>
+        `;
+        item.onclick = () => {
+          // 在线的末端位置创建该样式的新节点, 并把线连过去
+          const t = edge.getTarget();
+          if (t && typeof t.x === 'number') {
+            const gs = 10;
+            const nx = Math.round((t.x - tmpl.w / 2) / gs) * gs;
+            const ny = Math.round((t.y - tmpl.h / 2) / gs) * gs;
+            const newNode = graph.addNode({
+              shape: 'custom-html-node',
+              x: nx, y: ny, width: tmpl.w, height: tmpl.h,
+              data: { ...tmpl.data }
+            });
+            edge.setTarget({ cell: newNode.id });
+            const line = edge.attr('line') || {};
+            if (!line.targetMarker) edge.attr('line/targetMarker', { name: 'block', width: 8, height: 6 });
+          }
+          closeNodePicker();
+        };
+        list.appendChild(item);
+      });
+
+      const foot = document.createElement('div');
+      foot.className = 'px-3 py-2 border-t border-slate-100 flex justify-end';
+      const btnKeep = document.createElement('button');
+      btnKeep.type = 'button';
+      btnKeep.className = 'px-3 py-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 rounded';
+      btnKeep.textContent = '保持自由线';
+      btnKeep.onclick = () => { closeNodePicker(); keepFreeEdge(edge); };
+      foot.appendChild(btnKeep);
+
+      el.appendChild(head);
+      el.appendChild(list);
+      el.appendChild(foot);
+      document.body.appendChild(backdrop);
+      document.body.appendChild(el);
+      nodePickerEl = el;
+      list.querySelector('button')?.focus();
+
+      // Esc 取消 (保持自由线)
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { closeNodePicker(); keepFreeEdge(edge); }
+      });
+    }
+
+    // 2. 注册自定义 HTML 节点类型
+    // 注意: 必须用 X6.Shape.HTML.register 注册，它会把 html 方法写入渲染注册表 shapeMaps。
+    // 用 Graph.registerNode 注册的 HTML 节点只有 SVG 骨架，html 内容永远不会渲染。
+    X6.Shape.HTML.register({
+      shape: 'custom-html-node',
+      width: 100,
+      height: 60,
+      zIndex: 10, // 节点盖在连线上面, 否则线的加宽交互层会挡住端口, 导致点不到小圆点
+      ports: {
+        groups: {
+          top: { position: 'top', attrs: { circle: { r: 4, magnet: true, stroke: '#64748b', fill: '#fff', strokeWidth: 1 } } },
+          topLeft: { position: { name: 'top', args: { dx: -14 } }, attrs: { circle: { r: 4, magnet: true, stroke: '#64748b', fill: '#fff', strokeWidth: 1 } } },
+          topRight: { position: { name: 'top', args: { dx: 14 } }, attrs: { circle: { r: 4, magnet: true, stroke: '#64748b', fill: '#fff', strokeWidth: 1 } } },
+          bottom: { position: 'bottom', attrs: { circle: { r: 4, magnet: true, stroke: '#64748b', fill: '#fff', strokeWidth: 1 } } },
+          left: { position: 'left', attrs: { circle: { r: 4, magnet: true, stroke: '#64748b', fill: '#fff', strokeWidth: 1 } } },
+          right: { position: 'right', attrs: { circle: { r: 4, magnet: true, stroke: '#64748b', fill: '#fff', strokeWidth: 1 } } }
+        },
+        items: [{ group: 'top', id: 'top' }, { group: 'topLeft', id: 'topLeft' }, { group: 'topRight', id: 'topRight' }, { group: 'bottom', id: 'bottom' }, { group: 'left', id: 'left' }, { group: 'right', id: 'right' }]
+      },
+      html(cell) {
+        const data = cell.getData() || {};
+        const container = document.createElement('div');
+        container.className = `node-container w-full h-full relative rounded-xl flex flex-col items-center justify-center p-1 shadow-sm select-none cursor-pointer ${data.bgClass || 'bg-white'} ${data.borderClass || 'border-2 border-slate-800'}`;
+
+        // 自定义颜色 (hex, 优先于 Tailwind 类)
+        const c = data.colors || {};
+        if (c.bg) container.style.backgroundColor = c.bg;
+        if (c.border) container.style.borderColor = c.border;
+        
+        // 序号 Badge (开关控制, 默认显示)
+        let stepBadge = '';
+        if (showSteps && data.step) {
+          stepBadge = `<div class="absolute -top-2 -left-2 bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-white shadow-xs">${data.step}</div>`;
+        }
+
+        // 合并内联样式, 避免重复 style 属性
+        const labelStyle = 'white-space:pre-line' + (c.text ? `;color:${c.text}` : '');
+        const iconStyle = c.icon ? ` style="color:${c.icon}"` : '';
+        // 无图标节点 (模板拖出的新节点) 不渲染 <i>
+        const iconHtml = data.icon
+          ? `<i class="${data.icon} ${data.iconClass || 'text-slate-700'} text-xs mb-0.5"${iconStyle}></i>`
+          : '';
+        container.innerHTML = `
+          ${stepBadge}
+          ${iconHtml}
+          <span class="node-label text-[11px] font-bold ${data.textClass || 'text-slate-900'} text-center leading-tight" style="${labelStyle}">${data.label || '新节点'}</span>
+        `;
+        return container;
+      }
+    });
+
+    // 3. 初始渲染数据（提取自原流程图结构）
+    const initialData = {
+      nodes: [
+        // 主流程节点 (01-10), 无图标; 间距: 无分支线 70, 有分支线 185/190/130
+        { id: 'n1', shape: 'custom-html-node', x: 50, y: 300, width: 80, height: 60, data: { step: '01', label: '供方' } },
+        { id: 'n2', shape: 'custom-html-node', x: 315, y: 300, width: 90, height: 60, data: { step: '02', label: '指定仓库' } },
+        { id: 'n3', shape: 'custom-html-node', x: 475, y: 300, width: 90, height: 60, data: { step: '03', label: '质检委托' } },
+        { id: 'n4', shape: 'custom-html-node', x: 635, y: 300, width: 100, height: 60, data: { step: '04', label: '质检报告出具' } },
+        { id: 'n5', shape: 'custom-html-node', x: 805, y: 300, width: 90, height: 60, data: { step: '05', label: '注册仓单' } },
+        { id: 'n6', shape: 'custom-html-node', x: 1085, y: 300, width: 80, height: 60, data: { step: '06', label: '交割' } },
+        { id: 'n7', shape: 'custom-html-node', x: 1235, y: 298, width: 110, height: 64, data: { step: '07', label: '交易所匹配下家\n签订销售合同' } },
+        { id: 'n8', shape: 'custom-html-node', x: 1475, y: 298, width: 100, height: 64, data: { step: '08', label: '交割第三日\n收到80%货款' } },
+        { id: 'n9', shape: 'custom-html-node', x: 1645, y: 300, width: 70, height: 60, data: { step: '09', label: '开票' } },
+        { id: 'n10', shape: 'custom-html-node', x: 1785, y: 300, width: 70, height: 60, data: { step: '10', label: '收20%款' } },
+
+        // 分支节点: 统一蓝色底, 统一高度 55, 无图标
+        { id: 'b1', shape: 'custom-html-node', x: 113, y: 170, width: 90, height: 55, data: { label: '交割预报', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900' } },
+        { id: 'b2', shape: 'custom-html-node', x: 210, y: 170, width: 100, height: 55, data: { label: '移仓1:\n在途库-实体库', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900' } },
+        { id: 'b3', shape: 'custom-html-node', x: 315, y: 170, width: 90, height: 55, data: { label: '入库后付款', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900' } },
+        { id: 'b4', shape: 'custom-html-node', x: 883, y: 170, width: 100, height: 55, data: { label: '移仓2:\n实体库-期货库', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900' } },
+        { id: 'b5', shape: 'custom-html-node', x: 997, y: 170, width: 100, height: 55, data: { label: '移仓3:\n期货库-交割库', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900' } },
+        { id: 'b6', shape: 'custom-html-node', x: 1370, y: 170, width: 80, height: 55, data: { label: '出仓', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900' } },
+        { id: 'b7', shape: 'custom-html-node', x: 1480, y: 170, width: 90, height: 55, data: { label: '系统出金', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900' } },
+        { id: 'b8', shape: 'custom-html-node', x: 1775, y: 170, width: 90, height: 55, data: { label: '系统出金', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900' } }
+      ],
+      edges: [
+        // 主线实线: 从右端口出, 左端口入; main-1/main-2/main-3 命名供分支挂载
+        { id: 'main-1', source: { cell: 'n1', port: 'right' }, target: { cell: 'n2', port: 'left' }, labels: [{ attrs: { text: { text: '自提（发货通知）\n商家配送', fill: '#2563eb', fontSize: 10, fontWeight: 'bold' } } }] },
+        { source: { cell: 'n2', port: 'right' }, target: { cell: 'n3', port: 'left' } },
+        { source: { cell: 'n3', port: 'right' }, target: { cell: 'n4', port: 'left' } },
+        { source: { cell: 'n4', port: 'right' }, target: { cell: 'n5', port: 'left' } },
+        { id: 'main-2', source: { cell: 'n5', port: 'right' }, target: { cell: 'n6', port: 'left' } },
+        { source: { cell: 'n6', port: 'right' }, target: { cell: 'n7', port: 'left' } },
+        { id: 'main-3', source: { cell: 'n7', port: 'right' }, target: { cell: 'n8', port: 'left' } },
+        { source: { cell: 'n8', port: 'right' }, target: { cell: 'n9', port: 'left' } },
+        { source: { cell: 'n9', port: 'right' }, target: { cell: 'n10', port: 'left' } },
+
+        // 分支虚线 (统一蓝色): 挂在对应主线上, 用 ratio 锚点定位
+        { source: { cell: 'main-1', anchor: { name: 'ratio', args: { ratio: 0.15 } } }, target: { cell: 'b1' }, attrs: { line: { strokeDasharray: '4 4', stroke: '#0284c7' } } },
+        { source: { cell: 'main-1', anchor: { name: 'ratio', args: { ratio: 0.7 } } }, target: { cell: 'b2' }, attrs: { line: { strokeDasharray: '4 4', stroke: '#0284c7' } } },
+        { source: { cell: 'n2', port: 'top' }, target: { cell: 'b3' }, attrs: { line: { strokeDasharray: '4 4', stroke: '#0284c7' } } },
+        { source: { cell: 'main-2', anchor: { name: 'ratio', args: { ratio: 0.2 } } }, target: { cell: 'b4' }, attrs: { line: { strokeDasharray: '4 4', stroke: '#0284c7' } } },
+        { source: { cell: 'main-2', anchor: { name: 'ratio', args: { ratio: 0.8 } } }, target: { cell: 'b5' }, attrs: { line: { strokeDasharray: '4 4', stroke: '#0284c7' } } },
+        { source: { cell: 'main-3', anchor: { name: 'ratio', args: { ratio: 0.5 } } }, target: { cell: 'b6' }, attrs: { line: { strokeDasharray: '4 4', stroke: '#0284c7' } } },
+        { source: { cell: 'n8', port: 'top' }, target: { cell: 'b7' }, attrs: { line: { strokeDasharray: '4 4', stroke: '#0284c7' } } },
+        { source: { cell: 'n10', port: 'top' }, target: { cell: 'b8' }, attrs: { line: { strokeDasharray: '4 4', stroke: '#0284c7' } } }
+      ]
+    };
+
+    // 4. 载入图形数据: 不再无条件加载示例图, 交给底部多用户模块按用户名加载
+    //    (initialData 保留为 ZDD 用户的默认示例图, 见第 10 节)
+
+    // 5. 双击改字: 内联浮层编辑器 (替代原生 prompt)
+    let textEditorEl = null;
+    function closeTextEditor() {
+      if (textEditorEl) { textEditorEl.remove(); textEditorEl = null; }
+    }
+    function showTextEditor(cell) {
+      closeTextEditor();
+      const view = graph.findViewByCell(cell);
+      if (!view) return;
+      const rect = view.container.getBoundingClientRect();
+      const isNode = cell.isNode();
+      const current = isNode
+        ? (cell.getData()?.label || '')
+        : (cell.getLabels()[0]?.attrs?.text?.text || '');
+
+      const el = document.createElement('div');
+      el.className = 'fixed z-50 bg-white rounded-lg shadow-xl border border-slate-300 p-2 flex flex-col gap-1.5';
+      const elW = 240;
+      el.style.cssText = `left:${Math.max(8, rect.left + rect.width / 2 - elW / 2)}px;top:${Math.max(8, rect.top - 80)}px;width:${elW}px;`;
+
+      const ta = document.createElement('textarea');
+      ta.value = current;
+      ta.className = 'w-full text-xs font-sans text-slate-800 p-1.5 border border-slate-200 rounded outline-none resize-none';
+      ta.style.cssText = 'min-height:44px;max-height:160px;';
+      ta.addEventListener('focus', () => ta.style.borderColor = '#60a5fa');
+
+      const bar = document.createElement('div');
+      bar.className = 'flex items-center justify-between gap-2';
+      const hint = document.createElement('span');
+      hint.className = 'text-[10px] text-slate-400';
+      hint.textContent = '回车保存 · Shift+回车换行 · Esc 取消';
+      const btnSave = document.createElement('button');
+      btnSave.type = 'button';
+      btnSave.className = 'px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold';
+      btnSave.textContent = '保存';
+      bar.appendChild(hint);
+      bar.appendChild(btnSave);
+
+      const save = () => {
+        const val = ta.value;
+        if (isNode) {
+          cell.setData({ ...cell.getData(), label: val });
+        } else {
+          cell.setLabels(val ? [{ attrs: { text: { text: val, fill: '#2563eb', fontSize: 10, fontWeight: 'bold' } } }] : []);
+        }
+        closeTextEditor();
+      };
+      const cancel = () => closeTextEditor();
+
+      btnSave.onclick = save;
+      ta.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); save(); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); cancel(); }
+      });
+      ta.addEventListener('blur', () => setTimeout(() => { if (textEditorEl) save(); }, 150));
+
+      el.appendChild(ta);
+      el.appendChild(bar);
+      document.body.appendChild(el);
+      textEditorEl = el;
+      ta.focus();
+      ta.select();
+    }
+
+    graph.on('cell:dblclick', ({ cell }) => {
+      if (cell.isNode() || cell.isEdge()) showTextEditor(cell);
+    });
+
+    // 5.2 轻提示 (替代 alert 弹窗)
+    let toastTimer = null;
+    function showToast(msg) {
+      let t = document.getElementById('appToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'appToast';
+        t.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-900 text-white text-xs px-4 py-2 rounded-lg shadow-lg transition-opacity duration-300 pointer-events-none';
+        t.style.opacity = '0';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+    }
+
+    // 5.3 序号显示开关
+    const stepsBtn = document.getElementById('btnToggleSteps');
+    stepsBtn.onclick = () => {
+      showSteps = !showSteps;
+      stepsBtn.innerHTML = `<i class="fa-solid fa-list-ol"></i> 序号：${showSteps ? '开' : '关'}`;
+      // 直接调用 HTMLView 的渲染方法重绘内容 (confirmUpdate('html') 不触发, setData 相同值不触发)
+      graph.getNodes().forEach(n => {
+        const v = graph.findViewByCell(n);
+        if (v && typeof v.renderHTMLComponent === 'function') v.renderHTMLComponent();
+      });
+      showToast(showSteps ? '已显示节点序号' : '已隐藏节点序号');
+    };
+
+    // 5.4 箭头方向循环切换 (选中线后点击): → → ↔ → ← → 无箭头 → →
+    function cycleArrow(edge) {
+      const line = edge.attr('line') || {};
+      const hasTarget = !!line.targetMarker;
+      const hasSource = !!line.sourceMarker;
+      if (hasTarget && !hasSource) {
+        edge.attr('line/sourceMarker', { name: 'block', width: 8, height: 6 });
+      } else if (hasTarget && hasSource) {
+        edge.attr('line/targetMarker', null);
+      } else if (hasSource && !hasTarget) {
+        edge.attr('line/sourceMarker', null);
+      } else {
+        edge.attr('line/targetMarker', { name: 'block', width: 8, height: 6 });
+      }
+    }
+    document.getElementById('btnToggleArrow').onclick = () => {
+      const edges = graph.getSelectedCells().filter(c => c.isEdge());
+      if (!edges.length) { showToast('请先点击选中一条线, 再切换箭头方向'); return; }
+      edges.forEach(cycleArrow);
+      showToast('已切换箭头方向');
+    };
+
+    // 5.1 单击连线: 切换实线/虚线 (同时会选中该线)
+    graph.on('edge:click', ({ edge }) => {
+      const line = edge.attr('line') || {};
+      // X6 2.x 没有 removeAttr; attr 传 null 即删除该属性
+      edge.attr('line/strokeDasharray', line.strokeDasharray ? null : '4 4');
+    });
+
+    // 6. 快捷键盘删除操作 (在输入框/文本框内不触发)
+    window.addEventListener('keydown', (e) => {
+      const tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const cells = graph.getSelectedCells();
+        if (!cells.length) return;
+        // 提示: 被删除的线若被其他分支线挂载, 分支线会一并删除
+        const edgeIds = new Set(cells.filter(c => c.isEdge()).map(c => c.id));
+        let attached = 0;
+        if (edgeIds.size) {
+          graph.getEdges().forEach(ce => {
+            const s = ce.getSource();
+            if (s && edgeIds.has(s.cell)) attached++;
+          });
+        }
+        if (attached) {
+          // 两段式确认: 第一次 Delete 提示, 2.5 秒内再按一次才真正删除 (替代原生 confirm)
+          const selKey = cells.map(c => c.id).sort().join(',');
+          if (pendingBranchDelete === selKey) {
+            pendingBranchDelete = null;
+            clearTimeout(pendingBranchDeleteTimer);
+          } else {
+            pendingBranchDelete = selKey;
+            showToast(`这条线被 ${attached} 条分支线挂载, 再按一次 Delete 确认删除`);
+            clearTimeout(pendingBranchDeleteTimer);
+            pendingBranchDeleteTimer = setTimeout(() => { pendingBranchDelete = null; }, 2500);
+            return;
+          }
+        }
+        graph.removeCells(cells);
+      }
+    });
+
+    // 6.1 节点配色 (色板 + 自定义取色器)
+    const PALETTE = [
+      { name: '白色', bg: '#ffffff', border: '#1e293b', text: '#0f172a', icon: '#334155' },
+      { name: '蓝色', bg: '#eff6ff', border: '#60a5fa', text: '#1e40af', icon: '#2563eb' },
+      { name: '青色', bg: '#f0f9ff', border: '#38bdf8', text: '#0c4a6e', icon: '#0284c7' },
+      { name: '黄色', bg: '#fffbeb', border: '#fbbf24', text: '#78350f', icon: '#d97706' },
+      { name: '绿色', bg: '#ecfdf5', border: '#34d399', text: '#064e3b', icon: '#059669' },
+      { name: '粉色', bg: '#fff1f2', border: '#fda4af', text: '#881337', icon: '#e11d48' },
+      { name: '紫色', bg: '#eef2ff', border: '#a5b4fc', text: '#3730a3', icon: '#6366f1' },
+      { name: '红色', bg: '#fef2f2', border: '#f87171', text: '#991b1b', icon: '#dc2626' }
+    ];
+    let currentNodeColor = null; // null = 用模板自带颜色
+
+    // hex 颜色按百分比调亮/调暗 (percent 负数 = 变暗)
+    function shade(hex, percent) {
+      const n = parseInt(hex.slice(1), 16);
+      const f = (v) => Math.min(255, Math.max(0, v + Math.round((percent / 100) * 255)));
+      const r = f(n >> 16), g = f((n >> 8) & 0xff), b = f(n & 0xff);
+      return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+    }
+
+    // 应用颜色: 有选中节点 → 改选中节点; 否则记为新建节点默认色
+    function applyColor(c) {
+      const selected = graph.getSelectedCells().filter(cell => cell.isNode());
+      if (selected.length) {
+        selected.forEach(node => {
+          node.setData({ ...node.getData(), colors: { bg: c.bg, border: c.border, text: c.text, icon: c.icon } });
+        });
+      } else {
+        currentNodeColor = { ...c };
+      }
+    }
+
+    // 生成预设色板
+    const paletteEl = document.getElementById('colorPalette');
+    PALETTE.forEach(p => {
+      const sw = document.createElement('button');
+      sw.type = 'button';
+      sw.title = p.name;
+      sw.style.cssText = `width:26px;height:26px;border-radius:6px;background:${p.bg};border:2px solid ${p.border};cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.1)`;
+      sw.onclick = () => applyColor(p);
+      paletteEl.appendChild(sw);
+    });
+
+    // 自定义取色器: 背景色 → 边框/图标自动同色系变暗
+    document.getElementById('customColor').addEventListener('input', (e) => {
+      const hex = e.target.value;
+      applyColor({ name: '自定义', bg: hex, border: shade(hex, -20), text: '#0f172a', icon: shade(hex, -35) });
+    });
+
+    // 7. 拖拽左侧节点模板至画布
+    document.querySelectorAll('[drag-type]').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        const type = el.getAttribute('drag-type');
+        let nodeConfig = { shape: 'custom-html-node', width: 90, height: 55, data: { label: '新节点' } };
+        
+        if (type === 'main') {
+          nodeConfig.data = { label: '新主节点' };
+        } else if (type === 'branch-sky') {
+          nodeConfig.data = { label: '移仓节点', bgClass: 'bg-sky-50', borderClass: 'border border-sky-400', textClass: 'text-sky-900', iconClass: 'text-sky-600' };
+        } else if (type === 'branch-amber') {
+          nodeConfig.data = { label: '资金节点', bgClass: 'bg-amber-50', borderClass: 'border border-amber-400', textClass: 'text-amber-900', iconClass: 'text-amber-600' };
+        } else if (type === 'branch-emerald') {
+          nodeConfig.data = { label: '付款节点', bgClass: 'bg-emerald-50', borderClass: 'border border-emerald-400', textClass: 'text-emerald-900', iconClass: 'text-emerald-600' };
+        } else if (type === 'branch-rose') {
+          nodeConfig.data = { label: '出仓节点', bgClass: 'bg-rose-50', borderClass: 'border border-rose-300', textClass: 'text-rose-900', iconClass: 'text-rose-600' };
+        }
+
+        // 若设置了默认配色, 新节点套用 (优先于模板类)
+        if (currentNodeColor) {
+          nodeConfig.data.colors = { ...currentNodeColor };
+        }
+
+        const node = graph.createNode(nodeConfig);
+        // 使用简单的点击放置逻辑
+        const pos = graph.clientToLocal(e.clientX + 100, e.clientY);
+        node.setPosition(pos);
+        graph.addNode(node);
+      });
+    });
+
+    // 8. 导入 / 导出 / 缩放等工具按钮事件绑定
+    document.getElementById('zoomIn').onclick = () => graph.zoom(0.15);
+    document.getElementById('zoomOut').onclick = () => graph.zoom(-0.15);
+    document.getElementById('zoomReset').onclick = () => graph.zoomToFit({ maxScale: 1, padding: 40 });
+
+    // 导出 JSON
+    document.getElementById('btnExportJson').onclick = () => {
+      const fname = (currentDiagramName || '流程图').replace(/[\\/:*?"<>|]/g, '_');
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(graph.toJSON()));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", fname + ".json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('已导出 ' + fname + '.json');
+    };
+
+    // 导入 JSON
+    document.getElementById('btnImportJson').onclick = () => document.getElementById('fileInput').click();
+    document.getElementById('fileInput').onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const json = JSON.parse(event.target.result);
+          graph.fromJSON(json);
+          graph.zoomToFit({ maxScale: 1, padding: 40 });
+          scheduleAutosave(); // 导入内容自动存到当前图
+          showToast('已导入并自动保存');
+        } catch (err) {
+          showToast('JSON 文件格式解析失败');
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    // 导出 PNG 图片 (高清: 基于图的实际尺寸 + 3 倍率, 所见即所得)
+    document.getElementById('btnExportPng').onclick = () => {
+      // viewBox 用图坐标 (graphToLocal 转换), 导出尺寸 = 图实际尺寸 × ratio
+      const fname = (currentDiagramName || '流程图').replace(/[\\/:*?"<>|]/g, '_');
+      const gb = graph.graphToLocal(graph.getContentBBox());
+      graph.toPNG((dataUri) => {
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataUri);
+        downloadAnchor.setAttribute("download", fname + ".png");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      }, {
+        viewBox: gb,
+        padding: 20,
+        backgroundColor: '#f8fafc',
+        ratio: 3,
+        // X6 2.18.1 的 viewport 类名是 x6-graph-svg-viewport, 导出插件找旧类名 x6-graph-svg-stage
+        // 找不到就不移除缩放变换 → 导出内容被缩小。这里在序列化前手动移除, 保证按图坐标完整导出
+        beforeSerialize(svg) {
+          const vp = svg.querySelector('.x6-graph-svg-viewport');
+          if (vp) vp.removeAttribute('transform');
+          return svg;
+        }
+      });
+    };
+
+    // 9. JSON 编辑模态框
+    const jsonModal = document.getElementById('jsonEditorModal');
+    const jsonText = document.getElementById('jsonEditorText');
+    const jsonError = document.getElementById('jsonEditorError');
+
+    function openJsonEditor() {
+      jsonText.value = JSON.stringify(graph.toJSON(), null, 2);
+      jsonError.classList.add('hidden');
+      jsonModal.classList.remove('hidden');
+      jsonText.focus();
+    }
+    function closeJsonEditor() {
+      jsonModal.classList.add('hidden');
+    }
+    function showJsonError(msg) {
+      jsonError.textContent = msg;
+      jsonError.classList.remove('hidden');
+    }
+
+    // 校验: 连线引用的节点 id 必须存在 (防止改坏 id 导致线消失)
+    function validateJsonData(obj) {
+      if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return 'JSON 顶层必须是对象 ({...})';
+      const cells = obj.cells, nodes = obj.nodes;
+      if (cells != null && !Array.isArray(cells)) return '"cells" 必须是数组';
+      if (nodes != null && !Array.isArray(nodes)) return '"nodes" 必须是数组';
+      if (cells == null && nodes == null) return '缺少 "cells" 或 "nodes" 数组, 请检查 JSON 结构';
+      const idSet = new Set();
+      const allCells = cells || nodes || [];
+      allCells.forEach(c => { if (c && c.id) idSet.add(String(c.id)); });
+      const edges = cells ? (cells.filter(c => c && c.shape === 'edge')) : (obj.edges || []);
+      for (const e of edges) {
+        const s = e && e.source, t = e && e.target;
+        const sId = s && (typeof s === 'string' ? s : s.cell);
+        const tId = t && (typeof t === 'string' ? t : t.cell);
+        if (sId && !idSet.has(String(sId))) return `连线引用了不存在的节点 "${sId}" (source), 请检查节点 id`;
+        if (tId && !idSet.has(String(tId))) return `连线引用了不存在的节点 "${tId}" (target), 请检查节点 id`;
+      }
+      return null;
+    }
+
+    document.getElementById('btnEditJson').onclick = openJsonEditor;
+    document.getElementById('jsonEditorClose').onclick = closeJsonEditor;
+    document.getElementById('jsonEditorCancel').onclick = closeJsonEditor;
+    document.getElementById('jsonEditorBackdrop').onclick = closeJsonEditor;
+
+    document.getElementById('jsonEditorFormat').onclick = () => {
+      try {
+        jsonText.value = JSON.stringify(JSON.parse(jsonText.value), null, 2);
+        jsonError.classList.add('hidden');
+      } catch (e) {
+        showJsonError('JSON 语法错误: ' + e.message);
+      }
+    };
+
+    document.getElementById('jsonEditorApply').onclick = () => {
+      let obj;
+      try {
+        obj = JSON.parse(jsonText.value);
+      } catch (e) {
+        showJsonError('JSON 语法错误: ' + e.message);
+        return;
+      }
+      const err = validateJsonData(obj);
+      if (err) { showJsonError(err); return; }
+      try {
+        graph.fromJSON(obj);
+        graph.zoomToFit({ maxScale: 1, padding: 40 });
+        closeJsonEditor();
+      } catch (e) {
+        showJsonError('应用失败: ' + (e && e.message ? e.message : e));
+      }
+    };
+
+    // 快捷键: Esc 关闭节点选择器 (保持自由线)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && nodePickerEl && nodePickerEdge) {
+        closeNodePicker();
+        keepFreeEdge(nodePickerEdge);
+      }
+    });
+
+    // 快捷键: Ctrl+Enter 应用, Esc 关闭
+    document.addEventListener('keydown', (e) => {
+      if (jsonModal.classList.contains('hidden')) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('jsonEditorApply').click();
+      } else if (e.key === 'Escape') {
+        closeJsonEditor();
+      }
+    });
+    // ============ 10. 多用户图库: 输入用户名 → 加载该用户保存的图 ============
+    // 数据只存浏览器 localStorage, 键名带用户前缀区分: fc_<用户名>_<图id>
+    const LS_USER_KEY = 'fc_user';           // 记住当前用户名
+    const LS_SEEDED = 'fc_seeded_';          // 已播种标记 (防止 ZDD 示例图被删后又自动回来)
+    let currentUser = null;
+    let currentDiagramId = null;             // 当前打开的图 id
+    let currentDiagramName = null;           // 当前打开的图名 (导出文件名用)
+    let pendingBranchDelete = null;          // 两段式删除确认状态
+    let pendingBranchDeleteTimer = null;
+    let autosaveTimer = null;
+    let loadingDiagram = false;              // 加载图期间抑制自动保存
+
+    function genDiagramId() { return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+    function userKey(user, id) { return 'fc_' + user + '_' + id; }
+
+    // 列出某用户的所有图 id (排除内部键)
+    function listUserDiagrams(user) {
+      const prefix = 'fc_' + user + '_';
+      const out = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix) && !k.endsWith('_last') && !k.endsWith('_seeded')) {
+          out.push(k.slice(prefix.length));
+        }
+      }
+      return out;
+    }
+    function loadDiagram(user, id) {
+      try { return JSON.parse(localStorage.getItem(userKey(user, id))); } catch (e) { return null; }
+    }
+    function saveDiagramToLS(user, id, diagram) {
+      localStorage.setItem(userKey(user, id), JSON.stringify(diagram));
+    }
+
+    // ---- 保存当前图 ----
+    function saveCurrent(silent) {
+      if (!currentUser || !currentDiagramId || loadingDiagram) return;
+      const diagram = { name: currentDiagramName, savedAt: Date.now(), data: graph.toJSON() };
+      saveDiagramToLS(currentUser, currentDiagramId, diagram);
+      if (!silent) showToast('已保存');
+    }
+    function scheduleAutosave() {
+      if (loadingDiagram || !currentUser || !currentDiagramId) return;
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(() => saveCurrent(true), 600);
+    }
+    // 自动保存: 节点/连线任何变化都触发 (600ms 防抖)
+    ['cell:added', 'cell:removed', 'node:change:position', 'node:change:size',
+     'cell:change:data', 'cell:change:attrs', 'cell:change:labels',
+     'edge:change:source', 'edge:change:target', 'edge:change:vertices', 'edge:connected'
+    ].forEach(ev => graph.on(ev, scheduleAutosave));
+    // 关页面前保存一次
+    window.addEventListener('pagehide', () => { if (currentUser && currentDiagramId) saveCurrent(true); });
+
+    // ---- 标题更新 ----
+    function updateTitle() {
+      document.getElementById('appTitle').textContent = currentDiagramName || '流程图编辑器';
+      document.getElementById('appSubtitle').textContent = currentUser
+        ? `当前用户 ${currentUser} · 拖拽/连线/双击改字 · 自动保存`
+        : '输入用户名进入，你的图自动保存在本机浏览器';
+    }
+
+    // ---- 打开图 / 新建图 / 删除图 ----
+    function openDiagram(id) {
+      const diagram = loadDiagram(currentUser, id);
+      if (!diagram) { showToast('图不存在或已损坏'); return; }
+      loadingDiagram = true;
+      try {
+        graph.fromJSON(diagram.data);
+        graph.zoomToFit({ maxScale: 1, padding: 40 });
+        currentDiagramId = id;
+        currentDiagramName = diagram.name;
+        localStorage.setItem('fc_' + currentUser + '_last', id);
+        updateTitle();
+        closeLibrary();
+        showToast(`已打开「${diagram.name}」`);
+      } catch (err) {
+        showToast('加载失败: ' + (err && err.message ? err.message : err));
+      }
+      loadingDiagram = false;
+    }
+    function newDiagram() {
+      const id = genDiagramId();
+      const now = new Date();
+      const hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      loadingDiagram = true;
+      graph.clearCells();
+      loadingDiagram = false;
+      currentDiagramId = id;
+      currentDiagramName = '未命名 ' + hm;
+      saveCurrent(true);
+      localStorage.setItem('fc_' + currentUser + '_last', id);
+      updateTitle();
+      closeLibrary();
+      showToast('已新建空白图');
+    }
+    function deleteDiagram(id) {
+      localStorage.removeItem(userKey(currentUser, id));
+      if (currentDiagramId === id) { currentDiagramId = null; currentDiagramName = null; }
+      showToast('已删除');
+      renderLibrary();
+      if (!currentDiagramId) updateTitle();
+    }
+    function renameDiagram(id, newName) {
+      const diagram = loadDiagram(currentUser, id);
+      if (!diagram) return;
+      diagram.name = newName;
+      diagram.savedAt = Date.now();
+      saveDiagramToLS(currentUser, id, diagram);
+      if (currentDiagramId === id) { currentDiagramName = newName; updateTitle(); }
+      showToast('已重命名');
+      renderLibrary();
+    }
+
+    // ---- 图库浮层 ----
+    function renderLibrary() {
+      const listEl = document.getElementById('libraryList');
+      listEl.innerHTML = '';
+      const ids = listUserDiagrams(currentUser).sort((a, b) => {
+        const da = loadDiagram(currentUser, a), db = loadDiagram(currentUser, b);
+        return (db ? db.savedAt : 0) - (da ? da.savedAt : 0);
+      });
+      if (!ids.length) {
+        listEl.innerHTML = '<div class="text-center text-xs text-slate-400 py-10">还没有图，点下方「新建图」开始</div>';
+        return;
+      }
+      ids.forEach(id => {
+        const diagram = loadDiagram(currentUser, id);
+        if (!diagram) return;
+        const d = new Date(diagram.savedAt);
+        const time = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 transition-colors';
+        row.innerHTML = `
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-bold text-slate-800 truncate">${escapeHtml(diagram.name)}</div>
+            <div class="text-[10px] text-slate-400">保存于 ${time}</div>
+          </div>
+          <button class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[11px] font-bold flex-none lib-open">打开</button>
+          <button class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-[11px] flex-none lib-rename">重命名</button>
+          <button class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-[11px] flex-none lib-del">删除</button>
+        `;
+        row.querySelector('.lib-open').onclick = () => openDiagram(id);
+        row.querySelector('.lib-rename').onclick = () => startRename(row, id, diagram.name);
+        row.querySelector('.lib-del').onclick = () => confirmDeleteDiagram(id);
+        listEl.appendChild(row);
+      });
+    }
+    function startRename(row, id, oldName) {
+      const nameDiv = row.querySelector('.flex-1');
+      nameDiv.innerHTML = '';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = oldName;
+      input.className = 'w-full text-xs font-bold text-slate-800 p-1 border border-blue-400 rounded outline-none';
+      const done = (save) => {
+        const v = input.value.trim();
+        if (save && v && v !== oldName) renameDiagram(id, v); else renderLibrary();
+      };
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(true); else if (e.key === 'Escape') done(false); });
+      input.addEventListener('blur', () => done(true));
+      nameDiv.appendChild(input);
+      input.focus();
+      input.select();
+    }
+    // 图库删除两段式确认 (替代原生 confirm)
+    let pendingDelId = null, pendingDelTimer = null;
+    function confirmDeleteDiagram(id) {
+      if (pendingDelId === id) {
+        pendingDelId = null; clearTimeout(pendingDelTimer);
+        deleteDiagram(id);
+        return;
+      }
+      pendingDelId = id;
+      showToast('再点一次「删除」确认删除这张图');
+      clearTimeout(pendingDelTimer);
+      pendingDelTimer = setTimeout(() => { pendingDelId = null; }, 2500);
+    }
+    function openLibrary() {
+      saveCurrent(true);
+      document.getElementById('libraryTitle').textContent = '我的图库 · ' + currentUser;
+      renderLibrary();
+      document.getElementById('libraryModal').classList.remove('hidden');
+    }
+    function closeLibrary() {
+      document.getElementById('libraryModal').classList.add('hidden');
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // ---- 登录 / 切换用户 ----
+    function enterEditor(user) {
+      user = (user || '').trim().replace(/[^a-zA-Z0-9]/g, '');
+      if (!user) { showToast('用户名只能包含字母和数字'); return; }
+      currentUser = user;
+      localStorage.setItem(LS_USER_KEY, user);
+      // 首次进入 ZDD: 播种内置示例图 (只播一次, 用户删掉后不自动回来)
+      if (user === 'ZDD' && !localStorage.getItem(LS_SEEDED + user)) {
+        localStorage.setItem(LS_SEEDED + user, '1');
+        const id = genDiagramId();
+        saveDiagramToLS(user, id, { name: '商品交易流程图', savedAt: Date.now(), data: initialData });
+        localStorage.setItem('fc_' + user + '_last', id);
+      }
+      document.getElementById('loginOverlay').classList.add('hidden');
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('userChip').style.display = 'flex';
+      document.getElementById('userChipName').textContent = user;
+      // 打开该用户最后一张图, 没有则建新图
+      const lastId = localStorage.getItem('fc_' + user + '_last');
+      const lastDiag = lastId ? loadDiagram(user, lastId) : null;
+      if (lastDiag) openDiagram(lastId);
+      else newDiagram();
+      updateTitle();
+      showToast('欢迎，' + user);
+    }
+    function showLogin() {
+      const last = localStorage.getItem(LS_USER_KEY);
+      const lastBox = document.getElementById('loginLastUser');
+      if (last) {
+        lastBox.classList.remove('hidden');
+        lastBox.innerHTML = `上次用户 <b>${escapeHtml(last)}</b>，<button id="btnLoginAsLast" class="text-blue-600 font-bold underline">直接进入</button>`;
+        document.getElementById('btnLoginAsLast').onclick = () => enterEditor(last);
+      } else {
+        lastBox.classList.add('hidden');
+      }
+      document.getElementById('loginOverlay').style.display = 'flex';
+      setTimeout(() => document.getElementById('loginInput').focus(), 50);
+    }
+    function switchUser() {
+      saveCurrent(true);
+      currentUser = null; currentDiagramId = null; currentDiagramName = null;
+      document.getElementById('userChip').style.display = 'none';
+      document.getElementById('loginInput').value = '';
+      updateTitle();
+      showLogin();
+    }
+
+    // 登录 / 图库按钮事件
+    document.getElementById('loginBtn').onclick = () => enterEditor(document.getElementById('loginInput').value);
+    document.getElementById('loginInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') enterEditor(e.target.value); });
+    document.getElementById('userChip').onclick = switchUser;
+    document.getElementById('btnSave').onclick = () => saveCurrent(false);
+    document.getElementById('btnLibrary').onclick = openLibrary;
+    document.getElementById('libraryClose').onclick = closeLibrary;
+    document.getElementById('libraryBackdrop').onclick = closeLibrary;
+    document.getElementById('libraryNew').onclick = newDiagram;
+
+    // 启动: 记住的用户直接进入; 首次访问不弹登录框, 以 guest 身份直接进入编辑器
+    // (切换用户: 点击顶部用户 chip 输入用户名, 如 ZDD)
+    (function initApp() {
+      const remembered = localStorage.getItem(LS_USER_KEY);
+      if (remembered) enterEditor(remembered);
+      else enterEditor('guest');
+    })();
+  </script>
+</body>
+</html>

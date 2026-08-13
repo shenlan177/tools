@@ -116,6 +116,14 @@
             "path": "/tools/pages/tools/flowchart-editor.html",
             "tag": "Tools",
             "description": "可视化拖拽流程图编辑器：多用户图库、自动保存、导出 PNG/JSON"
+        },
+        {
+            "id": "ai-html-showcase",
+            "name": "AI 生成 HTML 的能力报告",
+            "icon": "✨",
+            "path": "/tools/pages/tools/ai-html-showcase.html",
+            "tag": "Tools",
+            "description": "用一句话生成一个能交互的网页？这个页面本身就是 AI 写的——六大能力活演示。"
         }
     ]
 }

@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<script src="../../assets/js/nav-component.js"></script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 生成的 HTML，能做到什么程度？</title>
+<style>
+    :root {
+        --bg: #0f0f1a;
+        --bg2: #1a1a2e;
+        --bg3: rgba(255,255,255,.05);
+        --text: #ffffff;
+        --text2: #a0a0b0;
+        --a1: #667eea;
+        --a2: #764ba2;
+        --cyan: #4ecdc4;
+        --yellow: #feca57;
+        --red: #ff6b6b;
+        --border: rgba(255,255,255,.1);
+        --grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.7;
+        overflow-x: hidden;
+    }
+    ::selection { background: rgba(102,126,234,.4); }
+
+    /* ============ HERO ============ */
+    .hero {
+        position: relative;
+        height: calc(100vh - 56px);
+        min-height: 560px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        overflow: hidden;
+    }
+    #particles {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        z-index: 0;
+    }
+    .hero-content { position: relative; z-index: 1; padding: 0 24px; max-width: 900px; }
+    .hero-badge {
+        display: inline-block;
+        padding: 6px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(102,126,234,.4);
+        background: rgba(102,126,234,.12);
+        color: #a5b4fc;
+        font-size: .85rem;
+        letter-spacing: 2px;
+        margin-bottom: 28px;
+        animation: pulse-glow 3s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+        0%,100% { box-shadow: 0 0 0 0 rgba(102,126,234,.25); }
+        50% { box-shadow: 0 0 24px 4px rgba(102,126,234,.35); }
+    }
+    .hero h1 {
+        font-size: clamp(1.8rem, 5vw, 3.4rem);
+        font-weight: 800;
+        line-height: 1.3;
+        min-height: 1.3em;
+        margin-bottom: 24px;
+    }
+    .grad-text {
+        background: var(--grad);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+    .cursor {
+        display: inline-block;
+        width: 3px; height: .9em;
+        background: var(--a1);
+        margin-left: 4px;
+        vertical-align: -0.1em;
+        animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .hero-sub {
+        color: var(--text2);
+        font-size: clamp(1rem, 2.2vw, 1.25rem);
+        max-width: 640px;
+        margin: 0 auto 36px;
+    }
+    .hero-cta {
+        display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    }
+    .btn {
+        display: inline-block;
+        padding: 12px 30px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 1rem;
+        transition: transform .2s, box-shadow .2s;
+        cursor: pointer;
+        border: none;
+    }
+    .btn-primary {
+        background: var(--grad);
+        color: #fff;
+        box-shadow: 0 6px 24px rgba(102,126,234,.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(102,126,234,.5); }
+    .btn-ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: rgba(102,126,234,.6); background: rgba(102,126,234,.1); }
+    .scroll-hint {
+        position: absolute; bottom: 28px; left: 50%;
+        transform: translateX(-50%);
+        color: var(--text2);
+        font-size: .85rem;
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+        z-index: 1;
+        animation: float-down 2s ease-in-out infinite;
+    }
+    @keyframes float-down {
+        0%,100% { transform: translate(-50%, 0); opacity:.7; }
+        50% { transform: translate(-50%, 8px); opacity:1; }
+    }
+
+    /* ============ LAYOUT ============ */
+    section { max-width: 1100px; margin: 0 auto; padding: 90px 24px; }
+    .sec-tag {
+        display: inline-block;
+        font-size: .8rem;
+        letter-spacing: 3px;
+        color: #a5b4fc;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+    }
+    .sec-title {
+        font-size: clamp(1.6rem, 4vw, 2.6rem);
+        font-weight: 800;
+        margin-bottom: 16px;
+    }
+    .sec-sub {
+        color: var(--text2);
+        font-size: 1.05rem;
+        max-width: 680px;
+        margin-bottom: 56px;
+    }
+    .center { text-align: center; }
+    .center .sec-sub { margin-left: auto; margin-right: auto; }
+
+    .reveal { opacity: 0; transform: translateY(36px); transition: opacity .8s ease, transform .8s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* ============ INTRO 自证 ============ */
+    .proof-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin-top: 16px;
+    }
+    .proof-item {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px 24px;
+        text-align: center;
+    }
+    .proof-item .big {
+        font-size: 1.6rem; font-weight: 800; margin-bottom: 6px;
+    }
+    .proof-item .small { color: var(--text2); font-size: .92rem; }
+    .strike { text-decoration: line-through; color: var(--red); }
+    .no-strike { color: var(--cyan); }
+
+    /* ============ ABILITY ROWS ============ */
+    .ability-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 56px;
+        align-items: center;
+        padding: 40px 0;
+    }
+    .ability-row + .ability-row { border-top: 1px solid rgba(255,255,255,.06); }
+    .ability-row.flip .ability-demo { order: -1; }
+    .ability-num {
+        font-size: 4rem;
+        font-weight: 900;
+        line-height: 1;
+        background: var(--grad);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        opacity: .55;
+        margin-bottom: 12px;
+    }
+    .ability-text h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 10px; }
+    .ability-text p { color: var(--text2); margin-bottom: 14px; }
+    .ability-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag {
+        font-size: .75rem;
+        padding: 4px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        color: var(--text2);
+    }
+    .ability-demo {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        position: relative;
+        overflow: hidden;
+    }
+    .ability-demo::before {
+        content: "";
+        position: absolute; inset: 0;
+        background: radial-gradient(600px 300px at 70% 20%, rgba(102,126,234,.12), transparent 70%);
+        pointer-events: none;
+    }
+    .demo-inner { position: relative; z-index: 1; width: 100%; }
+
+    /* --- Demo 1: 迷你界面 --- */
+    .mini-ui {
+        background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 22px;
+        backdrop-filter: blur(12px);
+        max-width: 340px;
+        margin: 0 auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,.4);
+        transition: transform .3s;
+    }
+    .mini-ui:hover { transform: translateY(-6px); }
+    .mini-avatar {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        background: var(--grad);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem;
+        margin-bottom: 14px;
+    }
+    .mini-ui h4 { font-size: 1.1rem; margin-bottom: 4px; }
+    .mini-ui .muted { color: var(--text2); font-size: .85rem; margin-bottom: 16px; }
+    .mini-btn {
+        display: inline-block;
+        background: var(--grad);
+        color: #fff;
+        padding: 8px 22px;
+        border-radius: 10px;
+        font-size: .85rem;
+        box-shadow: 0 4px 16px rgba(102,126,234,.35);
+    }
+    .mini-progress {
+        height: 6px; border-radius: 3px;
+        background: rgba(255,255,255,.1);
+        margin-top: 14px; overflow: hidden;
+    }
+    .mini-progress span {
+        display: block; height: 100%; width: 0;
+        background: var(--grad);
+        border-radius: 3px;
+        animation: fill-bar 2.4s ease forwards;
+    }
+    @keyframes fill-bar { to { width: 78%; } }
+
+    /* --- Demo 2: 动效 --- */
+    .fx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; text-align: center; }
+    .fx-item { padding: 18px 8px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--border); }
+    .fx-item .label { font-size: .78rem; color: var(--text2); margin-top: 10px; }
+    .pulse-dot {
+        width: 34px; height: 34px; margin: 0 auto;
+        border-radius: 50%;
+        background: var(--cyan);
+        animation: pulse-dot 1.6s ease-out infinite;
+    }
+    @keyframes pulse-dot {
+        0% { box-shadow: 0 0 0 0 rgba(78,205,196,.5); }
+        100% { box-shadow: 0 0 0 22px rgba(78,205,196,0); }
+    }
+    .spinner {
+        width: 34px; height: 34px; margin: 0 auto;
+        border: 3px solid rgba(255,255,255,.12);
+        border-top-color: var(--a1);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .bounce-box {
+        width: 34px; height: 34px; margin: 0 auto;
+        border-radius: 8px;
+        background: var(--grad);
+        animation: bounce-y 1.2s ease-in-out infinite;
+    }
+    @keyframes bounce-y {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-14px); }
+    }
+
+    /* --- Demo 3: 图表 --- */
+    .chart-wrap { display: flex; align-items: center; justify-content: center; gap: 36px; flex-wrap: wrap; }
+    .donut-group { text-align: center; }
+    .donut { position: relative; width: 130px; height: 130px; }
+    .donut svg { transform: rotate(-90deg); }
+    .donut .val {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; font-weight: 700;
+    }
+    .donut .lbl { font-size: .8rem; color: var(--text2); margin-top: 8px; }
+    .bar-chart { display: flex; align-items: flex-end; gap: 14px; height: 150px; }
+    .bar-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .bar {
+        width: 34px;
+        border-radius: 8px 8px 0 0;
+        background: var(--grad);
+        height: 0;
+        transition: height 1.2s cubic-bezier(.22,.61,.36,1);
+        position: relative;
+        cursor: default;
+    }
+    .bar::after {
+        content: attr(data-v);
+        position: absolute; top: -26px; left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: .75rem;
+        opacity: 0;
+        transition: opacity .2s;
+        white-space: nowrap;
+    }
+    .bar:hover::after { opacity: 1; }
+    .bar-col span { font-size: .75rem; color: var(--text2); }
+
+    /* --- Demo 4: 调色板 --- */
+    .palette { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .palette-swatch {
+        width: 110px; height: 110px;
+        border-radius: 18px;
+        background: #667eea;
+        box-shadow: 0 10px 30px rgba(0,0,0,.35);
+        display: flex; align-items: flex-end; justify-content: center;
+        padding-bottom: 10px;
+        transition: background .15s;
+    }
+    .palette-swatch .hex {
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        font-size: .8rem;
+        background: rgba(0,0,0,.35);
+        padding: 3px 10px;
+        border-radius: 8px;
+        backdrop-filter: blur(4px);
+    }
+    .palette-controls { display: flex; flex-direction: column; gap: 12px; min-width: 200px; }
+    .slider-row { display: flex; align-items: center; gap: 12px; font-size: .85rem; }
+    .slider-row label { width: 14px; font-weight: 700; }
+    .slider-row input[type=range] { flex: 1; accent-color: var(--a1); }
+    .slider-row .num {
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        width: 34px; text-align: right; color: var(--text2);
+    }
+    .copy-btn {
+        margin-top: 6px;
+        background: rgba(255,255,255,.08);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: .82rem;
+        cursor: pointer;
+        transition: background .2s;
+    }
+    .copy-btn:hover { background: rgba(102,126,234,.2); }
+    .toast {
+        position: fixed; bottom: 32px; left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--bg2);
+        border: 1px solid rgba(78,205,196,.5);
+        color: var(--text);
+        padding: 10px 24px;
+        border-radius: 12px;
+        font-size: .9rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .3s, transform .3s;
+        z-index: 9999;
+        box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* --- Demo 5: 泡泡游戏 --- */
+    .game-box {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        height: 260px;
+        margin: 0 auto;
+        border-radius: 14px;
+        background: radial-gradient(circle at 30% 20%, rgba(102,126,234,.15), transparent 60%), #14142a;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        cursor: crosshair;
+    }
+    .game-hud {
+        position: absolute; top: 12px; left: 14px; right: 14px;
+        display: flex; justify-content: space-between;
+        font-size: .82rem; color: var(--text2);
+        z-index: 2; pointer-events: none;
+    }
+    .game-hud b { color: var(--text); }
+    .game-overlay {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 12px;
+        background: rgba(15,15,26,.7);
+        backdrop-filter: blur(3px);
+        z-index: 3;
+        text-align: center;
+        padding: 20px;
+    }
+    .game-overlay.hidden { display: none; }
+    .game-overlay h5 { font-size: 1.3rem; }
+    .bubble {
+        position: absolute;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-size: .7rem; color: rgba(255,255,255,.9);
+        user-select: none;
+        z-index: 1;
+    }
+    .bubble.popped { animation: pop-out .35s forwards; }
+    @keyframes pop-out { to { transform: scale(1.25); opacity: 0; } }
+
+    /* --- Demo 6: 响应式 --- */
+    .resize-hint {
+        text-align: center; font-size: .82rem; color: var(--text2);
+        margin-bottom: 14px;
+    }
+    .resize-hint .handle-ico { display: inline-block; margin-left: 4px; }
+    .resizable {
+        container-type: inline-size;
+        resize: both;
+        overflow: hidden;
+        width: 100%;
+        max-width: 460px;
+        height: 200px;
+        margin: 0 auto;
+        border: 1px solid rgba(102,126,234,.4);
+        border-radius: 14px;
+        background: rgba(255,255,255,.03);
+        padding: 14px;
+        transition: box-shadow .2s;
+    }
+    .resizable:hover { box-shadow: 0 0 24px rgba(102,126,234,.25); }
+    .res-inner {
+        display: flex;
+        gap: 12px;
+        height: 100%;
+    }
+    .res-card {
+        flex: 1;
+        background: rgba(255,255,255,.07);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        min-width: 0;
+    }
+    .res-card .rc-ico { font-size: 1.2rem; margin-bottom: 6px; }
+    .res-card .rc-txt { font-size: .72rem; color: var(--text2); }
+    @container (max-width: 300px) {
+        .res-inner { flex-direction: column; overflow-y: auto; }
+        .res-card { display: flex; align-items: center; gap: 10px; }
+        .res-card .rc-ico { margin-bottom: 0; }
+    }
+
+    /* ============ WORKFLOW ============ */
+    .wf-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 64px; }
+    .wf-step {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px 24px;
+        position: relative;
+    }
+    .wf-step .step-no {
+        position: absolute; top: -14px; left: 24px;
+        background: var(--grad);
+        color: #fff;
+        font-size: .75rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 999px;
+    }
+    .wf-step h4 { margin-bottom: 8px; }
+    .wf-step p { color: var(--text2); font-size: .92rem; }
+    .wf-step .example {
+        margin-top: 12px;
+        font-size: .8rem;
+        color: #a5b4fc;
+        background: rgba(102,126,234,.1);
+        border-radius: 8px;
+        padding: 8px 12px;
+    }
+
+    .sim-box {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        text-align: center;
+    }
+    .sim-input-row { display: flex; gap: 12px; max-width: 640px; margin: 0 auto 24px; }
+    .sim-input {
+        flex: 1;
+        background: rgba(255,255,255,.06);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: var(--text);
+        font-size: .92rem;
+        outline: none;
+    }
+    .sim-input:focus { border-color: rgba(102,126,234,.6); }
+    .sim-log {
+        display: flex; flex-direction: column; gap: 8px;
+        min-height: 70px;
+        max-width: 640px;
+        margin: 0 auto 20px;
+        text-align: left;
+    }
+    .sim-log .line {
+        font-size: .85rem;
+        color: var(--text2);
+        opacity: 0;
+        transform: translateX(-8px);
+        transition: opacity .3s, transform .3s;
+    }
+    .sim-log .line.on { opacity: 1; transform: none; }
+    .sim-log .line .ok { color: var(--cyan); margin-right: 8px; }
+    .sim-result {
+        display: none;
+        gap: 24px;
+        text-align: left;
+        max-width: 640px;
+        margin: 0 auto;
+        animation: fade-in .5s ease;
+    }
+    .sim-result.show { display: flex; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .sim-code {
+        flex: 1.2;
+        background: #10101c;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        font-size: .72rem;
+        line-height: 1.8;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .sim-code .tk-tag { color: #ff8fa3; }
+    .sim-code .tk-attr { color: #8ecae6; }
+    .sim-code .tk-str { color: #a8e6a3; }
+    .sim-code .tk-com { color: #5c5c75; }
+    .sim-render {
+        flex: 1;
+        background: rgba(255,255,255,.04);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ============ CASE WALL ============ */
+    .case-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .case-card {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        text-decoration: none;
+        color: inherit;
+        transition: transform .25s, border-color .25s, box-shadow .25s;
+        display: block;
+        position: relative;
+    }
+    .case-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(102,126,234,.5);
+        box-shadow: 0 16px 40px rgba(0,0,0,.4);
+    }
+    .case-card .cc-ico { font-size: 2rem; margin-bottom: 12px; }
+    .case-card h4 { margin-bottom: 6px; font-size: 1.05rem; }
+    .case-card p { color: var(--text2); font-size: .85rem; }
+    .case-card .cc-go {
+        margin-top: 14px;
+        color: #a5b4fc;
+        font-size: .82rem;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+    .case-card:hover .cc-go { gap: 10px; }
+    .case-card .cc-go { transition: gap .2s; }
+
+    /* ============ FOOTER ============ */
+    footer {
+        border-top: 1px solid rgba(255,255,255,.06);
+        padding: 48px 24px 56px;
+        text-align: center;
+        color: var(--text2);
+        font-size: .88rem;
+    }
+    footer .ft-main { color: var(--text); margin-bottom: 8px; }
+    footer .ft-kbd {
+        display: inline-block;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 1px 8px;
+        font-family: "SF Mono", Menlo, monospace;
+        font-size: .8rem;
+        margin: 0 2px;
+    }
+    footer a { color: #a5b4fc; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 860px) {
+        .ability-row, .ability-row.flip { grid-template-columns: 1fr; gap: 28px; }
+        .ability-row.flip .ability-demo { order: 0; }
+        .proof-strip { grid-template-columns: 1fr; }
+        .wf-steps { grid-template-columns: 1fr; }
+        .case-grid { grid-template-columns: 1fr; }
+        .sim-result { flex-direction: column; }
+        .sim-input-row { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .reveal { opacity: 1; transform: none; transition: none; }
+        #particles { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+    <canvas id="particles"></canvas>
+    <div class="hero-content">
+        <div class="hero-badge">✨ AI × HTML 能力报告</div>
+        <h1><span id="typewriter"></span><span class="cursor"></span></h1>
+        <p class="hero-sub">这不是模板，不是拖拽工具，不是别人做好的主题。<br>
+        这是一个 AI，根据一句大白话描述，当场写出来的网页。<br>
+        <strong class="grad-text">你现在看的这整个页面，就是。</strong></p>
+        <div class="hero-cta">
+            <a href="#intro" class="btn btn-primary">往下看证据 →</a>
+            <a href="#abilities" class="btn btn-ghost">直接看能力演示</a>
+        </div>
+    </div>
+    <div class="scroll-hint">滚动探索 <span>↓</span></div>
+</header>
+
+<main>
+    <!-- ================= INTRO ================= -->
+    <section id="intro">
+        <div class="center">
+            <div class="sec-tag">开场 · 先讲清楚</div>
+            <h2 class="sec-title">说一句人话，得到一个能用的网页</h2>
+            <p class="sec-sub">这句话放在五年前是科幻，现在是日常。这个页面不讲任何理论——下面的每一个模块都是「活」的演示。你看到什么，AI 就能做出什么。</p>
+        </div>
+        <div class="proof-strip">
+            <div class="proof-item reveal">
+                <div class="big"><span class="strike">截图？</span></div>
+                <div class="small">不是。整个页面是代码实时渲染的，从第一个像素起就是真的。</div>
+            </div>
+            <div class="proof-item reveal">
+                <div class="big"><span class="strike">模板？</span></div>
+                <div class="small">不是。没有套用任何现成主题，配色、布局、动效全部由 AI 从零构思。</div>
+            </div>
+            <div class="proof-item reveal">
+                <div class="big"><span class="no-strike">AI 写的。</span></div>
+                <div class="small">而且是一个人用大白话对话，改了几轮，改出来的。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= ABILITIES ================= -->
+    <section id="abilities">
+        <div class="center">
+            <div class="sec-tag">六大能力 · 全是活的</div>
+            <h2 class="sec-title">AI 生成的 HTML，能做到什么</h2>
+            <p class="sec-sub">下面每一项，右边的演示都是真实可交互的代码，不是图片。你可以动手玩。</p>
+        </div>
+
+        <!-- 1 设计排版 -->
+        <div class="ability-row reveal">
+            <div class="ability-text">
+                <div class="ability-num">01</div>
+                <h3>设计与排版</h3>
+                <p>AI 懂设计。配色、字体、圆角、阴影、间距——这些「看起来专业」的细节，AI 一次就能给到位。你不需要懂任何设计理论，只需要说清楚想要什么感觉。</p>
+                <div class="ability-tags">
+                    <span class="tag">配色系统</span><span class="tag">渐变</span><span class="tag">玻璃拟态</span><span class="tag">字体层级</span>
+                </div>
+            </div>
+            <div class="ability-demo">
+                <div class="demo-inner">
+                    <div class="mini-ui">
+                        <div class="mini-avatar">🎨</div>
+                        <h4>一个「设计师做的」界面</h4>
+                        <p class="muted">悬浮看看 —— 这是 AI 随口描述的产物</p>
+                        <span class="mini-btn">开始使用</span>
+                        <div class="mini-progress"><span></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2 动效 -->
+        <div class="ability-row flip reveal">
+            <div class="ability-text">
+                <div class="ability-num">02</div>
+                <h3>动画与动效</h3>
+                <p>会动的页面。悬停、滚动、加载、转场——AI 能把静态页面变得有生命。动效不是装饰：它引导视线、传递状态、让访客愿意多看两眼。</p>
+                <div class="ability-tags">
+                    <span class="tag">CSS 动画</span><span class="tag">过渡</span><span class="tag">滚动触发</span>
+                </div>
+            </div>
+            <div class="ability-demo">
+                <div class="demo-inner">
+                    <div class="fx-grid">
+                        <div class="fx-item"><div class="pulse-dot"></div><div class="label">脉冲提示</div></div>
+                        <div class="fx-item"><div class="spinner"></div><div class="label">加载指示</div></div>
+                        <div class="fx-item"><div class="bounce-box"></div><div class="label">弹性跳动</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3 数据可视化 -->
+        <div class="ability-row reveal">
+            <div class="ability-text">
+                <div class="ability-num">03</div>
+                <h3>数据可视化</h3>
+                <p>枯燥的数字变成图表。环形图、柱状图、折线图——AI 几分钟就能画好，还带动画和悬浮提示。以前这得专门学一个图表库，现在说一句「帮我画个占比图」就够了。</p>
+                <div class="ability-tags">
+                    <span class="tag">SVG</span><span class="tag">CSS 图表</span><span class="tag">交互提示</span>
+                </div>
+            </div>
+            <div class="ability-demo">
+                <div class="demo-inner">
+                    <div class="chart-wrap">
+                        <div class="donut-group">
+                            <div class="donut">
+                                <svg width="130" height="130" viewBox="0 0 130 130">
+                                    <circle cx="65" cy="65" r="52" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="14"/>
+                                    <circle class="donut-ring" cx="65" cy="65" r="52" fill="none" stroke="#667eea" stroke-width="14"
+                                        stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" data-target="0.42"/>
+                                    <circle cx="65" cy="65" r="36" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="14"/>
+                                    <circle class="donut-ring" cx="65" cy="65" r="36" fill="none" stroke="#4ecdc4" stroke-width="14"
+                                        stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="226.2" data-target="0.66"/>
+                                </svg>
+                                <div class="val">42%</div>
+                            </div>
+                            <div class="lbl">用户占比（悬浮看柱子 ↓）</div>
+                        </div>
+                        <div class="bar-chart" id="barChart">
+                            <div class="bar-col"><div class="bar" data-h="120" data-v="24"></div><span>周一</span></div>
+                            <div class="bar-col"><div class="bar" data-h="170" data-v="34"></div><span>周二</span></div>
+                            <div class="bar-col"><div class="bar" data-h="140" data-v="28"></div><span>周三</span></div>
+                            <div class="bar-col"><div class="bar" data-h="190" data-v="38"></div><span>周四</span></div>
+                            <div class="bar-col"><div class="bar" data-h="210" data-v="42"></div><span>周五</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 交互工具 -->
+        <div class="ability-row flip reveal">
+            <div class="ability-text">
+                <div class="ability-num">04</div>
+                <h3>交互与工具</h3>
+                <p>AI 生成的页面不只是「好看的」，还是「能用的」。滑块、按钮、输入框、计算逻辑——它产出的就是一个可以日常操作的网页工具，不是一张海报。</p>
+                <div class="ability-tags">
+                    <span class="tag">表单控件</span><span class="tag">实时反馈</span><span class="tag">逻辑处理</span>
+                </div>
+            </div>
+            <div class="ability-demo">
+                <div class="demo-inner">
+                    <div class="palette">
+                        <div class="palette-swatch" id="swatch"><span class="hex" id="hexText">#667EEA</span></div>
+                        <div class="palette-controls">
+                            <div class="slider-row"><label style="color:var(--red)">R</label><input type="range" id="sR" min="0" max="255" value="102"><span class="num" id="nR">102</span></div>
+                            <div class="slider-row"><label style="color:var(--cyan)">G</label><input type="range" id="sG" min="0" max="255" value="126"><span class="num" id="nG">126</span></div>
+                            <div class="slider-row"><label style="color:#a5b4fc">B</label><input type="range" id="sB" min="0" max="255" value="234"><span class="num" id="nB">234</span></div>
+                            <button class="copy-btn" id="copyBtn">📋 复制颜色代码</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5 游戏 -->
+        <div class="ability-row reveal">
+            <div class="ability-text">
+                <div class="ability-num">05</div>
+                <h3>游戏与创意</h3>
+                <p>甚至能生成一个能玩的迷你游戏。逻辑、计分、倒计时、音效感——AI 的边界比你想象的大。你站的「五子棋」「陷阵之志」都是这么来的。</p>
+                <div class="ability-tags">
+                    <span class="tag">游戏逻辑</span><span class="tag">计分系统</span><span class="tag">生成艺术</span>
+                </div>
+            </div>
+            <div class="ability-demo">
+                <div class="demo-inner">
+                    <div class="game-box" id="gameBox">
+                        <div class="game-hud"><span>得分 <b id="score">0</b></span><span id="timer">10.0s</span></div>
+                        <div class="game-overlay" id="gameOverlay">
+                            <h5>🎯 10 秒内，点掉所有泡泡！</h5>
+                            <button class="btn btn-primary" id="gameStart">开始游戏</button>
+                            <p style="font-size:.8rem;color:var(--text2)">这个小游戏本身，就是 AI 生成的</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6 响应式 -->
+        <div class="ability-row flip reveal">
+            <div class="ability-text">
+                <div class="ability-num">06</div>
+                <h3>响应式：一个页面通吃所有屏幕</h3>
+                <p>手机、平板、电脑——同一个页面自动适配，不用写第二套。拖动下面这个框的右下角，亲眼看看布局怎么自己变。</p>
+                <div class="ability-tags">
+                    <span class="tag">自适应布局</span><span class="tag">容器查询</span><span class="tag">移动优先</span>
+                </div>
+            </div>
+            <div class="ability-demo">
+                <div class="demo-inner">
+                    <div class="resize-hint">↔ 拖动右下角，把框拉窄 <span class="handle-ico">↘</span></div>
+                    <div class="resizable" id="resizable">
+                        <div class="res-inner">
+                            <div class="res-card"><div class="rc-ico">📄</div><div class="rc-txt">标题</div></div>
+                            <div class="res-card"><div class="rc-ico">🖼️</div><div class="rc-txt">图片</div></div>
+                            <div class="res-card"><div class="rc-ico">✍️</div><div class="rc-txt">内容</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= WORKFLOW ================= -->
+    <section id="workflow">
+        <div class="center">
+            <div class="sec-tag">背后 · 打破误解</div>
+            <h2 class="sec-title">AI 不是一键成品，是人机协作</h2>
+            <p class="sec-sub">最大的误解是「AI 自动生成 = 按一下就完事」。真实过程更像请了一个又快又懂行的设计师：你说，它做，你挑毛病，它改。三轮对话能顶以前一天的活。</p>
+        </div>
+        <div class="wf-steps">
+            <div class="wf-step reveal">
+                <div class="step-no">第一步</div>
+                <h4>💬 说出想法</h4>
+                <p>用大白话描述你要什么，越具体越好。</p>
+                <div class="example">「我想要一个卡片式首页，深色背景，蓝紫渐变按钮，卡片悬浮有阴影。」</div>
+            </div>
+            <div class="wf-step reveal">
+                <div class="step-no">第二步</div>
+                <h4>🤖 AI 生成初稿</h4>
+                <p>几秒钟，AI 给出一版完整、能直接打开运行的 HTML。</p>
+                <div class="example">不用学框架、不用配环境，一个文件就是整个页面。</div>
+            </div>
+            <div class="wf-step reveal">
+                <div class="step-no">第三步</div>
+                <h4>🔁 对话迭代</h4>
+                <p>「标题再大点」「动画再顺滑」「改成两列」——像跟设计师沟通一样，改到满意为止。</p>
+                <div class="example">平均 3-5 轮对话，一个能上线的页面就有了。</div>
+            </div>
+        </div>
+
+        <!-- 模拟生成 -->
+        <div class="sim-box reveal">
+            <h3 style="margin-bottom:8px">现场模拟：一句人话 → 一个网页</h3>
+            <p style="color:var(--text2);font-size:.9rem;margin-bottom:24px">点一下「生成」，看 AI 的工作过程（这是演示，背后是预设好的示例）</p>
+            <div class="sim-input-row">
+                <input class="sim-input" id="simInput" value="做一个深色卡片，标题「你好」，渐变按钮，带进度条">
+                <button class="btn btn-primary" id="simBtn" style="white-space:nowrap">⚡ 生成</button>
+            </div>
+            <div class="sim-log" id="simLog"></div>
+            <div class="sim-result" id="simResult">
+                <pre class="sim-code"><span class="tk-com">&lt;!-- AI 生成的代码（节选） --&gt;</span>
+<span class="tk-tag">&lt;div</span> <span class="tk-attr">class</span>=<span class="tk-str">"card"</span><span class="tk-tag">&gt;</span>
+  <span class="tk-tag">&lt;h3&gt;</span>你好<span class="tk-tag">&lt;/h3&gt;</span>
+  <span class="tk-tag">&lt;p&gt;</span>这是 AI 根据一句话生成的卡片<span class="tk-tag">&lt;/p&gt;</span>
+  <span class="tk-tag">&lt;button</span> <span class="tk-attr">class</span>=<span class="tk-str">"btn"</span><span class="tk-tag">&gt;</span>点我<span class="tk-tag">&lt;/button&gt;</span>
+  <span class="tk-tag">&lt;div</span> <span class="tk-attr">class</span>=<span class="tk-str">"bar"</span><span class="tk-tag">&gt;&lt;/div&gt;</span>
+<span class="tk-tag">&lt;/div&gt;</span></pre>
+                <div class="sim-render">
+                    <div style="background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:14px;padding:20px;max-width:220px;text-align:center">
+                        <div style="font-size:1rem;font-weight:700;margin-bottom:6px">你好</div>
+                        <div style="font-size:.78rem;color:var(--text2);margin-bottom:14px">这是 AI 根据一句话生成的卡片</div>
+                        <div style="background:var(--grad);color:#fff;border-radius:8px;padding:7px 0;font-size:.8rem;margin-bottom:12px">点我</div>
+                        <div style="height:5px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden"><div style="height:100%;width:70%;background:var(--grad);border-radius:3px"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= CASES ================= -->
+    <section id="cases">
+        <div class="center">
+            <div class="sec-tag">闭环 · 证据就在这个站里</div>
+            <h2 class="sec-title">这个站，就是活证据</h2>
+            <p class="sec-sub">你不是在看演示——下面每一个工具，都是 AI 生成的 HTML，已经在你眼前运行。点开玩一玩，比任何说明都管用。</p>
+        </div>
+        <div class="case-grid">
+            <a class="case-card reveal" href="./flowchart-editor.html">
+                <div class="cc-ico">🔀</div>
+                <h4>流程图编辑器</h4>
+                <p>可拖拽节点、自动保存、多用户分库——一个完整的在线工具，AI 生成。</p>
+                <span class="cc-go">去玩 →</span>
+            </a>
+            <a class="case-card reveal" href="./solar-system.html">
+                <div class="cc-ico">🌌</div>
+                <h4>太阳系</h4>
+                <p>行星公转动画，轨道、速度、比例，全部用代码模拟。</p>
+                <span class="cc-go">去玩 →</span>
+            </a>
+            <a class="case-card reveal" href="./gomoku.html">
+                <div class="cc-ico">⚫</div>
+                <h4>五子棋</h4>
+                <p>完整的双人对战游戏：棋盘、胜负判定、悔棋。</p>
+                <span class="cc-go">去玩 →</span>
+            </a>
+            <a class="case-card reveal" href="./math_worksheet.html">
+                <div class="cc-ico">🧮</div>
+                <h4>数学练习生成器</h4>
+                <p>自动出题、排版、打印——家长神器，AI 生成。</p>
+                <span class="cc-go">去玩 →</span>
+            </a>
+            <a class="case-card reveal" href="./bidirectional-links.html">
+                <div class="cc-ico">🔗</div>
+                <h4>双链的力量</h4>
+                <p>知识卡片双向链接的可视化演示，概念讲得比文字清楚。</p>
+                <span class="cc-go">去玩 →</span>
+            </a>
+            <a class="case-card reveal" href="./into-the-breach-v2.html">
+                <div class="cc-ico">🤖</div>
+                <h4>陷阵之志复刻</h4>
+                <p>回合制战术游戏原型：意图显示、碰撞伤害、电网机制。</p>
+                <span class="cc-go">去玩 →</span>
+            </a>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p class="ft-main">本页面由 <strong class="grad-text">AI 与人类协作</strong> 生成</p>
+    <p>单文件 · 无框架 · 无外部依赖 · 复制即用</p>
+    <p style="margin-top:10px">想看看它到底怎么写的？<span class="ft-kbd">Cmd</span> / <span class="ft-kbd">Ctrl</span> + <span class="ft-kbd">U</span> 查看源代码，每一个像素都在里面。</p>
+    <p style="margin-top:16px;font-size:.8rem">© 2026 · <a href="../../index.html">AI Tools Collection</a></p>
+</footer>
+
+<div class="toast" id="toast">已复制到剪贴板 📋</div>
+
+<script>
+/* ============ HERO 粒子 ============ */
+(function(){
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+    const COLORS = ['#667eea','#764ba2','#4ecdc4','#feca57'];
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resize(){
+        W = canvas.offsetWidth; H = canvas.offsetHeight;
+        canvas.width = W * DPR; canvas.height = H * DPR;
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        const count = Math.min(90, Math.floor(W * H / 16000));
+        particles = Array.from({length: count}, () => ({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            vx: (Math.random() - .5) * .5,
+            vy: (Math.random() - .5) * .5,
+            r: Math.random() * 2 + 1,
+            c: COLORS[Math.floor(Math.random() * COLORS.length)]
+        }));
+    }
+
+    function draw(){
+        ctx.clearRect(0, 0, W, H);
+        for (let i = 0; i < particles.length; i++){
+            const p = particles[i];
+            p.x += p.vx; p.y += p.vy;
+            if (p.x < 0 || p.x > W) p.vx *= -1;
+            if (p.y < 0 || p.y > H) p.vy *= -1;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.c;
+            ctx.globalAlpha = .7;
+            ctx.fill();
+            for (let j = i + 1; j < particles.length; j++){
+                const q = particles[j];
+                const dx = p.x - q.x, dy = p.y - q.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 130){
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(q.x, q.y);
+                    ctx.strokeStyle = '#667eea';
+                    ctx.globalAlpha = (1 - d / 130) * .25;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+        }
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
+})();
+
+/* ============ 打字机 ============ */
+(function(){
+    const el = document.getElementById('typewriter');
+    const phrases = [
+        'AI 生成的 HTML，能做到什么程度？',
+        '从一句话，到一个能交互的网页。',
+        '你现在看到的，就是 AI 写的。'
+    ];
+    let pi = 0, ci = 0, deleting = false;
+    const speed = 65, delSpeed = 28;
+
+    function type(){
+        const cur = phrases[pi];
+        if (!deleting){
+            ci++;
+            el.textContent = cur.slice(0, ci);
+            if (ci === cur.length){ setTimeout(() => { deleting = true; }, 2200); }
+        } else {
+            ci--;
+            el.textContent = cur.slice(0, ci);
+            if (ci === 0){ deleting = false; pi = (pi + 1) % phrases.length; }
+        }
+        setTimeout(type, deleting ? delSpeed : speed);
+    }
+    type();
+})();
+
+/* ============ 滚动渐入 ============ */
+(function(){
+    const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); }
+        });
+    }, { threshold: .12 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+})();
+
+/* ============ 图表动画 ============ */
+(function(){
+    const rings = document.querySelectorAll('.donut-ring');
+    const bars = document.querySelectorAll('#barChart .bar');
+    const barBox = document.getElementById('barChart');
+    let ringsDone = false, barsDone = false;
+
+    function animateRings(){
+        if (ringsDone) return; ringsDone = true;
+        rings.forEach(ring => {
+            const target = parseFloat(ring.dataset.target);
+            const C = parseFloat(ring.getAttribute('stroke-dasharray').split(' ')[0] || ring.getAttribute('stroke-dasharray'));
+            const end = C * (1 - target);
+            let start = null;
+            const step = t => {
+                if (!start) start = t;
+                const p = Math.min((t - start) / 1400, 1);
+                const eased = 1 - Math.pow(1 - p, 3);
+                ring.style.strokeDashoffset = C * (1 - target * eased);
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        });
+    }
+    function animateBars(){
+        if (barsDone) return; barsDone = true;
+        bars.forEach((bar, i) => {
+            setTimeout(() => { bar.style.height = bar.dataset.h + 'px'; }, i * 90);
+        });
+    }
+    const ringObs = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting){ animateRings(); ringObs.disconnect(); } });
+    }, { threshold: .4 });
+    document.querySelectorAll('.donut-group')[0] && ringObs.observe(document.querySelector('.donut-group'));
+    const barObs = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting){ animateBars(); barObs.disconnect(); } });
+    }, { threshold: .4 });
+    barObs.observe(barBox);
+})();
+
+/* ============ 调色板 ============ */
+(function(){
+    const r = document.getElementById('sR'), g = document.getElementById('sG'), b = document.getElementById('sB');
+    const nr = document.getElementById('nR'), ng = document.getElementById('nG'), nb = document.getElementById('nB');
+    const swatch = document.getElementById('swatch'), hex = document.getElementById('hexText');
+    function update(){
+        const h = '#' + [r,g,b].map(x => (+x.value).toString(16).padStart(2,'0')).join('').toUpperCase();
+        swatch.style.background = h;
+        hex.textContent = h;
+        nr.textContent = r.value; ng.textContent = g.value; nb.textContent = b.value;
+    }
+    [r,g,b].forEach(x => x.addEventListener('input', update));
+    document.getElementById('copyBtn').addEventListener('click', () => {
+        const h = hex.textContent;
+        const done = () => {
+            const t = document.getElementById('toast');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1800);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(h).then(done).catch(done);
+        } else { done(); }
+    });
+    update();
+})();
+
+/* ============ 泡泡游戏 ============ */
+(function(){
+    const box = document.getElementById('gameBox');
+    const scoreEl = document.getElementById('score');
+    const timerEl = document.getElementById('timer');
+    const overlay = document.getElementById('gameOverlay');
+    const startBtn = document.getElementById('gameStart');
+    const COLORS = ['#667eea','#764ba2','#4ecdc4','#feca57','#ff6b6b'];
+    let score = 0, timeLeft = 10, running = false, tick = null, spawn = null;
+
+    function rand(min, max){ return Math.random() * (max - min) + min; }
+
+    function spawnBubble(){
+        if (!running) return;
+        const size = rand(28, 58);
+        const el = document.createElement('div');
+        el.className = 'bubble';
+        el.style.width = size + 'px';
+        el.style.height = size + 'px';
+        el.style.left = rand(10, box.clientWidth - size - 10) + 'px';
+        el.style.top = rand(34, box.clientHeight - size - 10) + 'px';
+        el.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+        el.style.boxShadow = '0 6px 18px rgba(0,0,0,.35)';
+        el.textContent = '🫧';
+        el.style.fontSize = (size * .45) + 'px';
+        el.addEventListener('click', e => {
+            e.stopPropagation();
+            score++;
+            scoreEl.textContent = score;
+            el.classList.add('popped');
+            setTimeout(() => el.remove(), 360);
+            spawnBubble();
+        });
+        box.appendChild(el);
+        setTimeout(() => { if (el.parentNode === box) el.remove(); }, 2400);
+    }
+
+    function start(){
+        score = 0; timeLeft = 10; running = true;
+        scoreEl.textContent = 0;
+        overlay.classList.add('hidden');
+        box.querySelectorAll('.bubble').forEach(x => x.remove());
+        for (let i = 0; i < 5; i++) spawnBubble();
+        tick = setInterval(() => {
+            timeLeft -= 0.1;
+            timerEl.textContent = timeLeft.toFixed(1) + 's';
+            if (timeLeft <= 0){
+                clearInterval(tick);
+                running = false;
+                overlay.querySelector('h5').textContent = '🏆 得分：' + score + ' 分';
+                startBtn.textContent = '再玩一次';
+                overlay.classList.remove('hidden');
+            }
+        }, 100);
+    }
+    startBtn.addEventListener('click', start);
+})();
+
+/* ============ 生成模拟 ============ */
+(function(){
+    const btn = document.getElementById('simBtn');
+    const log = document.getElementById('simLog');
+    const result = document.getElementById('simResult');
+    const lines = [
+        '正在理解你的需求…',
+        '生成页面结构 (HTML)…',
+        '设计样式 (CSS)…',
+        '添加交互逻辑 (JS)…',
+        '✅ 完成！页面已就绪'
+    ];
+    let busy = false;
+
+    btn.addEventListener('click', () => {
+        if (busy) return; busy = true;
+        result.classList.remove('show');
+        log.innerHTML = '';
+        lines.forEach((l, i) => {
+            setTimeout(() => {
+                const div = document.createElement('div');
+                div.className = 'line';
+                div.innerHTML = l.startsWith('✅') ? '<span class="ok">✓</span>' + l.slice(2) : '<span class="ok">·</span>' + l;
+                log.appendChild(div);
+                requestAnimationFrame(() => div.classList.add('on'));
+                if (i === lines.length - 1){
+                    setTimeout(() => {
+                        result.classList.add('show');
+                        busy = false;
+                    }, 600);
+                }
+            }, i * 650);
+        });
+    });
+})();
+</script>
+</body>
+</html>

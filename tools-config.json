@@ -124,6 +124,14 @@
             "path": "/tools/pages/tools/ai-html-showcase.html",
             "tag": "Tools",
             "description": "用一句话生成一个能交互的网页？这个页面本身就是 AI 写的——六大能力活演示。"
+        },
+        {
+            "id": "html-ppt",
+            "name": "年度经营报告 · HTML PPT",
+            "icon": "🎞️",
+            "path": "/tools/pages/tools/html-ppt.html",
+            "tag": "Tools",
+            "description": "HTML 做的全屏 PPT：12 页数据汇报，图表动画全可交互，键盘翻页，手机也能看。"
         }
     ]
 }

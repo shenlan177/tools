@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<script src="../../assets/js/nav-component.js"></script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>年度经营报告 · HTML PPT</title>
+<style>
+    :root {
+        --bg: #0f0f1a;
+        --bg2: #16162a;
+        --card: rgba(255,255,255,.05);
+        --border: rgba(255,255,255,.1);
+        --text: #ffffff;
+        --text2: #a0a0b0;
+        --a1: #667eea;
+        --a2: #764ba2;
+        --cyan: #4ecdc4;
+        --yellow: #feca57;
+        --red: #ff6b6b;
+        --grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        overflow: hidden;
+    }
+    ::selection { background: rgba(102,126,234,.4); }
+
+    /* ============ DECK 翻页 ============ */
+    .deck {
+        height: 100vh;
+        transition: transform .75s cubic-bezier(.65,.05,.36,1);
+        will-change: transform;
+    }
+    .slide {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 72px 32px 56px;
+        position: relative;
+        overflow: hidden;
+    }
+    .slide-inner { width: 100%; max-width: 1080px; position: relative; z-index: 2; }
+
+    /* 分层渐入 */
+    .step { opacity: 0; transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
+    .slide.active .step { opacity: 1; transform: none; }
+    .slide.active .d1 { transition-delay: .10s; }
+    .slide.active .d2 { transition-delay: .22s; }
+    .slide.active .d3 { transition-delay: .34s; }
+    .slide.active .d4 { transition-delay: .46s; }
+    .slide.active .d5 { transition-delay: .58s; }
+    .slide.active .d6 { transition-delay: .70s; }
+
+    /* 章节标签 */
+    .sec-tag {
+        display: inline-block;
+        font-size: .78rem;
+        letter-spacing: 3px;
+        color: #a5b4fc;
+        border: 1px solid rgba(102,126,234,.35);
+        background: rgba(102,126,234,.1);
+        padding: 4px 14px;
+        border-radius: 999px;
+        margin-bottom: 18px;
+    }
+    .slide-title { font-size: clamp(1.6rem, 3.6vw, 2.5rem); font-weight: 800; margin-bottom: 8px; }
+    .slide-sub { color: var(--text2); font-size: clamp(.9rem, 1.6vw, 1.05rem); margin-bottom: 36px; }
+    .grad-text {
+        background: var(--grad);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+
+    /* ============ 导航 UI ============ */
+    .ppt-nav {
+        position: fixed;
+        right: 22px; bottom: 20px;
+        z-index: 100;
+        display: flex; align-items: center; gap: 14px;
+        font-size: .82rem; color: var(--text2);
+    }
+    .ppt-nav .page-num { font-family: "SF Mono", Menlo, monospace; }
+    .ppt-nav .page-num b { color: var(--text); }
+    .nav-arrow {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,.06);
+        color: var(--text);
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all .2s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .nav-arrow:hover { border-color: rgba(102,126,234,.6); background: rgba(102,126,234,.15); }
+    .progress-track {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 3px;
+        background: rgba(255,255,255,.06);
+        z-index: 101;
+    }
+    .progress-bar {
+        height: 100%;
+        width: 0;
+        background: var(--grad);
+        transition: width .4s ease;
+    }
+    .key-hint {
+        position: fixed;
+        left: 22px; bottom: 20px;
+        font-size: .78rem;
+        color: var(--text2);
+        z-index: 100;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .key-hint .k {
+        display: inline-block;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 1px 8px;
+        font-family: "SF Mono", Menlo, monospace;
+        font-size: .75rem;
+        background: rgba(255,255,255,.04);
+    }
+
+    /* ============ Slide 0 封面 ============ */
+    #particles { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+    .cover-content { position: relative; z-index: 2; text-align: center; }
+    .cover-badge {
+        display: inline-block;
+        padding: 6px 20px;
+        border-radius: 999px;
+        border: 1px solid rgba(102,126,234,.4);
+        background: rgba(102,126,234,.12);
+        color: #a5b4fc;
+        font-size: .85rem;
+        letter-spacing: 3px;
+        margin-bottom: 30px;
+        animation: cover-pulse 3s ease-in-out infinite;
+    }
+    @keyframes cover-pulse {
+        0%,100% { box-shadow: 0 0 0 0 rgba(102,126,234,.25); }
+        50% { box-shadow: 0 0 26px 4px rgba(102,126,234,.35); }
+    }
+    .cover-title {
+        font-size: clamp(2.4rem, 8vw, 5.2rem);
+        font-weight: 900;
+        line-height: 1.15;
+        margin-bottom: 22px;
+    }
+    .cover-sub { color: var(--text2); font-size: clamp(.95rem, 2vw, 1.2rem); margin-bottom: 44px; }
+    .cover-meta { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; margin-bottom: 50px; }
+    .cover-meta span { color: var(--text2); font-size: .9rem; }
+    .cover-meta b { color: var(--text); font-weight: 600; }
+    .cover-hint {
+        font-size: .85rem;
+        color: var(--text2);
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .cover-hint .down {
+        width: 28px; height: 44px;
+        border: 2px solid rgba(255,255,255,.3);
+        border-radius: 16px;
+        position: relative;
+        animation: hint-bob 2s ease-in-out infinite;
+    }
+    .cover-hint .down::after {
+        content: "";
+        position: absolute; top: 8px; left: 50%;
+        transform: translateX(-50%);
+        width: 4px; height: 8px;
+        border-radius: 2px;
+        background: var(--a1);
+    }
+    @keyframes hint-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+
+    /* ============ Slide 1 目录 ============ */
+    .toc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .toc-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 26px 22px;
+        cursor: pointer;
+        transition: all .25s;
+        position: relative;
+        overflow: hidden;
+    }
+    .toc-card:hover {
+        border-color: rgba(102,126,234,.55);
+        transform: translateY(-4px);
+        box-shadow: 0 14px 34px rgba(0,0,0,.4);
+    }
+    .toc-card .toc-no {
+        font-size: .72rem;
+        letter-spacing: 2px;
+        color: #a5b4fc;
+        margin-bottom: 10px;
+    }
+    .toc-card .toc-ico { font-size: 1.6rem; margin-bottom: 10px; }
+    .toc-card h4 { font-size: 1.05rem; margin-bottom: 6px; }
+    .toc-card p { font-size: .78rem; color: var(--text2); }
+
+    /* ============ Slide 2 KPI ============ */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+    .kpi-card {
+        background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 28px 24px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .kpi-card::before {
+        content: "";
+        position: absolute; top: 0; left: 0; right: 0;
+        height: 3px;
+        background: var(--grad);
+        opacity: .7;
+    }
+    .kpi-card .kpi-label { font-size: .8rem; color: var(--text2); margin-bottom: 10px; }
+    .kpi-card .kpi-value { font-size: clamp(1.7rem, 3.4vw, 2.6rem); font-weight: 800; }
+    .kpi-card .kpi-delta { font-size: .82rem; margin-top: 8px; }
+    .up { color: var(--cyan); }
+    .kpi-note {
+        text-align: center;
+        color: var(--text2);
+        font-size: 1rem;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 26px;
+        max-width: 720px;
+        margin: 0 auto;
+    }
+    .kpi-note b { color: var(--yellow); font-weight: 600; }
+
+    /* ============ Slide 3 营收趋势 ============ */
+    .chart-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 26px;
+    }
+    .line-chart { width: 100%; display: block; }
+    .line-chart .grid-line { stroke: rgba(255,255,255,.07); stroke-width: 1; }
+    .line-chart .axis-label { fill: var(--text2); font-size: 12px; }
+    .line-chart .dot { fill: #0f0f1a; stroke-width: 3; }
+    .chart-controls {
+        display: flex; align-items: center; justify-content: center;
+        gap: 18px; margin-top: 20px;
+    }
+    .chart-controls input[type=range] { width: 320px; max-width: 60%; accent-color: var(--a1); cursor: pointer; }
+    .chart-controls .readout {
+        font-family: "SF Mono", Menlo, monospace;
+        font-size: .85rem;
+        color: var(--text2);
+        white-space: nowrap;
+    }
+    .chart-controls .readout b { color: var(--yellow); }
+
+    /* ============ Slide 4 利润分析 ============ */
+    .bars-wrap { display: flex; align-items: flex-end; justify-content: center; gap: 34px; height: 300px; }
+    .bar-group { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .bar-pair { display: flex; align-items: flex-end; gap: 8px; height: 230px; }
+    .bar-rev, .bar-cost {
+        width: 40px;
+        border-radius: 8px 8px 0 0;
+        position: relative;
+        height: 0;
+        transition: height 1s cubic-bezier(.22,.61,.36,1);
+    }
+    .bar-rev { background: var(--grad); }
+    .bar-cost { background: rgba(255,255,255,.16); }
+    .bar-rev::after, .bar-cost::after {
+        content: attr(data-v);
+        position: absolute; top: -24px; left: 50%;
+        transform: translateX(-50%);
+        font-size: .7rem;
+        color: var(--text2);
+        opacity: 0;
+        transition: opacity .2s;
+        white-space: nowrap;
+        font-family: "SF Mono", Menlo, monospace;
+    }
+    .bar-rev:hover::after, .bar-cost:hover::after { opacity: 1; color: var(--text); }
+    .bar-lbl { font-size: .78rem; color: var(--text2); }
+    .legend { display: flex; gap: 22px; justify-content: center; margin-top: 24px; font-size: .82rem; color: var(--text2); }
+    .legend span { display: flex; align-items: center; gap: 8px; }
+    .legend .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+    /* ============ Slide 5 收入结构 ============ */
+    .donut-layout { display: flex; align-items: center; justify-content: center; gap: 56px; flex-wrap: wrap; }
+    .donut-box { position: relative; width: 260px; height: 260px; }
+    .donut-box svg { transform: rotate(-90deg); }
+    .donut-center {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+    }
+    .donut-center .dc-val { font-size: 1.8rem; font-weight: 800; }
+    .donut-center .dc-lbl { font-size: .78rem; color: var(--text2); }
+    .legend-list { display: flex; flex-direction: column; gap: 14px; }
+    .legend-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,.03);
+        cursor: pointer;
+        transition: all .2s;
+        font-size: .88rem;
+        min-width: 220px;
+    }
+    .legend-item:hover { border-color: rgba(102,126,234,.5); background: rgba(102,126,234,.08); }
+    .legend-item.sel { border-color: rgba(102,126,234,.7); background: rgba(102,126,234,.14); }
+    .legend-item .li-color { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+    .legend-item .li-name { flex: 1; }
+    .legend-item .li-val { font-family: "SF Mono", Menlo, monospace; color: var(--text2); }
+    .dim-switch { display: flex; gap: 10px; justify-content: center; margin-bottom: 26px; }
+    .dim-btn {
+        padding: 8px 22px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text2);
+        font-size: .85rem;
+        cursor: pointer;
+        transition: all .2s;
+    }
+    .dim-btn.on { background: var(--grad); border-color: transparent; color: #fff; }
+    .dim-btn:not(.on):hover { border-color: rgba(102,126,234,.5); color: var(--text); }
+
+    /* ============ Slide 6 用户增长 ============ */
+    .area-chart { width: 100%; display: block; }
+    .user-kpi {
+        display: flex; justify-content: center; gap: 44px; flex-wrap: wrap;
+        margin-top: 20px; font-size: .9rem; color: var(--text2);
+    }
+    .user-kpi b { color: var(--text); font-size: 1.3rem; font-weight: 800; }
+    .user-kpi .u-up { color: var(--cyan); }
+
+    /* ============ Slide 7 市场格局 ============ */
+    .hbar-wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    .hbar-row { display: grid; grid-template-columns: 84px 1fr 60px; align-items: center; gap: 14px; }
+    .hbar-name { font-size: .85rem; color: var(--text2); text-align: right; }
+    .hbar-track {
+        height: 26px;
+        background: rgba(255,255,255,.05);
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+    .hbar-fill {
+        height: 100%;
+        width: 0;
+        border-radius: 8px;
+        transition: width 1.1s cubic-bezier(.22,.61,.36,1);
+        position: relative;
+    }
+    .hbar-val { font-family: "SF Mono", Menlo, monospace; font-size: .85rem; color: var(--text2); }
+    .hbar-row.we .hbar-name { color: var(--yellow); font-weight: 700; }
+    .hbar-row.we .hbar-fill {
+        background: var(--grad);
+        box-shadow: 0 0 18px rgba(102,126,234,.5);
+    }
+    .we-tag {
+        display: inline-block;
+        font-size: .68rem;
+        background: rgba(254,202,87,.15);
+        color: var(--yellow);
+        border-radius: 6px;
+        padding: 2px 8px;
+        margin-left: 6px;
+        vertical-align: 1px;
+    }
+
+    /* ============ Slide 8 能力雷达 ============ */
+    .radar-layout { display: flex; align-items: center; justify-content: center; gap: 60px; flex-wrap: wrap; }
+    .radar-box { position: relative; width: 340px; height: 340px; }
+    .radar-box svg { width: 100%; height: 100%; }
+    .radar-legend { display: flex; flex-direction: column; gap: 12px; }
+    .radar-legend .rl-item { display: flex; align-items: center; gap: 10px; font-size: .88rem; color: var(--text2); }
+    .radar-legend .rl-sq { width: 14px; height: 14px; border-radius: 4px; }
+
+    /* ============ Slide 9 目标达成 ============ */
+    .goal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+    .goal-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 30px 20px;
+        text-align: center;
+    }
+    .ring-box { position: relative; width: 132px; height: 132px; margin: 0 auto 14px; }
+    .ring-box svg { transform: rotate(-90deg); }
+    .ring-box .ring-val {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+    }
+    .ring-box .ring-val .rv { font-size: 1.6rem; font-weight: 800; }
+    .ring-box .ring-val .rvl { font-size: .7rem; color: var(--text2); }
+    .goal-card h4 { font-size: .95rem; margin-bottom: 6px; }
+    .goal-card .goal-sub { font-size: .75rem; color: var(--text2); }
+
+    /* ============ Slide 10 展望 ============ */
+    .outlook-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+    .outlook-card {
+        background: linear-gradient(160deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 26px 22px;
+    }
+    .outlook-card .oc-ico { font-size: 1.8rem; margin-bottom: 12px; }
+    .outlook-card h4 { font-size: 1.02rem; margin-bottom: 8px; }
+    .outlook-card p { font-size: .84rem; color: var(--text2); }
+    .target-bar {
+        text-align: center;
+        font-size: 1.1rem;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 20px;
+        max-width: 640px;
+        margin: 0 auto;
+    }
+    .target-bar b { font-size: 1.4rem; }
+
+    /* ============ Slide 11 结尾 ============ */
+    .end-content { text-align: center; }
+    .end-big { font-size: clamp(1.8rem, 4.5vw, 3rem); font-weight: 900; margin-bottom: 16px; }
+    .end-sub { color: var(--text2); font-size: 1.05rem; margin-bottom: 40px; }
+    .end-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+        display: inline-block;
+        padding: 12px 30px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: .95rem;
+        cursor: pointer;
+        border: none;
+        transition: all .2s;
+    }
+    .btn-primary { background: var(--grad); color: #fff; box-shadow: 0 6px 24px rgba(102,126,234,.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(102,126,234,.5); }
+    .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: rgba(102,126,234,.6); background: rgba(102,126,234,.1); }
+    .end-meta { margin-top: 44px; font-size: .8rem; color: var(--text2); }
+
+    /* ============ 移动端：纵向滚动 ============ */
+    @media (max-width: 768px) {
+        body { overflow: auto; }
+        .deck { height: auto; transform: none !important; transition: none; }
+        .slide {
+            height: auto;
+            min-height: 100dvh;
+            padding: 70px 18px 44px;
+        }
+        .slide + .slide { border-top: 1px solid rgba(255,255,255,.07); }
+        .step { opacity: 1; transform: none; }
+        .ppt-nav, .key-hint, .progress-track { display: none; }
+        .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        .toc-grid { grid-template-columns: repeat(2, 1fr); }
+        .goal-grid { grid-template-columns: repeat(2, 1fr); }
+        .outlook-grid { grid-template-columns: 1fr; }
+        .bars-wrap { gap: 16px; }
+        .bar-rev, .bar-cost { width: 26px; }
+        .donut-box { width: 220px; height: 220px; }
+        .radar-box { width: 280px; height: 280px; }
+        .hbar-row { grid-template-columns: 64px 1fr 48px; gap: 8px; }
+        .chart-controls input[type=range] { width: 70%; }
+    }
+    @media (max-width: 420px) {
+        .kpi-grid, .toc-grid, .goal-grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .deck { transition: none; }
+        .step { opacity: 1; transform: none; transition: none; }
+        #particles { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+
+<div class="deck" id="deck">
+
+    <!-- ============ 封面 ============ -->
+    <section class="slide" data-slide="0">
+        <canvas id="particles"></canvas>
+        <div class="slide-inner cover-content">
+            <div class="cover-badge step d1">2025 年度经营报告</div>
+            <h1 class="cover-title step d2">数据<span class="grad-text">会说话</span></h1>
+            <p class="cover-sub step d3">一份用 HTML 做的年度汇报 · 图表全部真实可交互</p>
+            <div class="cover-meta step d4">
+                <span>汇报单位 <b>星辰科技</b></span>
+                <span>汇报期间 <b>2025.01 – 2025.12</b></span>
+                <span>数据口径 <b>合并报表</b></span>
+            </div>
+            <div class="cover-hint step d5">
+                <div class="down"></div>
+                <span>按 <b>空格</b> 或 <b>方向键 →</b> 翻页</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 目录 ============ -->
+    <section class="slide" data-slide="1">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">CONTENTS · 目录</div>
+            <h2 class="slide-title step d2">六个章节，讲完这一年</h2>
+            <p class="slide-sub step d3">点击任意章节直接跳转</p>
+            <div class="toc-grid">
+                <div class="toc-card step d3" data-goto="2"><div class="toc-no">01</div><div class="toc-ico">📊</div><h4>经营概况</h4><p>四个核心指标总览</p></div>
+                <div class="toc-card step d3" data-goto="3"><div class="toc-no">02</div><div class="toc-ico">📈</div><h4>营收趋势</h4><p>季度增长 · 拖动时间轴回放</p></div>
+                <div class="toc-card step d3" data-goto="4"><div class="toc-no">03</div><div class="toc-ico">💹</div><h4>利润分析</h4><p>营收 × 成本逐季拆解</p></div>
+                <div class="toc-card step d3" data-goto="5"><div class="toc-no">04</div><div class="toc-ico">🍰</div><h4>收入结构</h4><p>点击图例切换维度</p></div>
+                <div class="toc-card step d4" data-goto="6"><div class="toc-no">05</div><div class="toc-ico">🚀</div><h4>用户增长</h4><p>全年净增 480 万</p></div>
+                <div class="toc-card step d4" data-goto="7"><div class="toc-no">06</div><div class="toc-ico">🏆</div><h4>市场格局</h4><p>份额对比 · 我们高亮</p></div>
+                <div class="toc-card step d4" data-goto="8"><div class="toc-no">07</div><div class="toc-ico">🛡️</div><h4>能力对比</h4><p>五维雷达 vs 竞对</p></div>
+                <div class="toc-card step d4" data-goto="9"><div class="toc-no">08</div><div class="toc-ico">🎯</div><h4>目标达成</h4><p>四个进度环</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ KPI 总览 ============ -->
+    <section class="slide" data-slide="2">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">01 · 经营概况</div>
+            <h2 class="slide-title step d2">四个数字，概括全年</h2>
+            <p class="slide-sub step d3">核心经营指标 · 同比 2024 年</p>
+            <div class="kpi-grid">
+                <div class="kpi-card step d3">
+                    <div class="kpi-label">年度营收</div>
+                    <div class="kpi-value grad-text"><span class="count" data-target="1.28" data-dec="2">0</span> 亿</div>
+                    <div class="kpi-delta up">▲ 同比 +32.4%</div>
+                </div>
+                <div class="kpi-card step d4">
+                    <div class="kpi-label">净利润</div>
+                    <div class="kpi-value grad-text"><span class="count" data-target="3260" data-suffix=" 万">0</span></div>
+                    <div class="kpi-delta up">▲ 同比 +41.2%</div>
+                </div>
+                <div class="kpi-card step d5">
+                    <div class="kpi-label">累计活跃用户</div>
+                    <div class="kpi-value grad-text"><span class="count" data-target="480" data-suffix=" 万">0</span></div>
+                    <div class="kpi-delta up">▲ 同比 +58.0%</div>
+                </div>
+                <div class="kpi-card step d6">
+                    <div class="kpi-label">市场份额</div>
+                    <div class="kpi-value grad-text"><span class="count" data-target="23.4" data-dec="1" data-suffix="%">0</span></div>
+                    <div class="kpi-delta up">▲ 同比 +5.2pp</div>
+                </div>
+            </div>
+            <div class="kpi-note step d6">一句话总结：<b>营收、利润、用户、份额四个指标全部两位数增长</b>，主营业务进入收获期。</div>
+        </div>
+    </section>
+
+    <!-- ============ 营收趋势 ============ -->
+    <section class="slide" data-slide="3">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">02 · 营收趋势</div>
+            <h2 class="slide-title step d2">季度营收稳步爬坡</h2>
+            <p class="slide-sub step d3">单位：万元 · 拖动滑块回放增长过程，看看曲线是怎么走出来的</p>
+            <div class="chart-card step d4">
+                <svg class="line-chart" id="lineChart" viewBox="0 0 960 320" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-controls">
+                    <span class="readout">进度</span>
+                    <input type="range" id="timeline" min="0" max="100" value="0" step="1">
+                    <span class="readout">累计营收 <b id="timelineVal">0</b> 万元</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 利润分析 ============ -->
+    <section class="slide" data-slide="4">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">03 · 利润分析</div>
+            <h2 class="slide-title step d2">营收跑得快，利润跑得更快</h2>
+            <p class="slide-sub step d3">逐季营收 vs 成本（万元）· 悬停柱子看数值 · 净利润率逐季走强</p>
+            <div class="bars-wrap step d4" id="profitBars">
+                <div class="bar-group">
+                    <div class="bar-pair">
+                        <div class="bar-rev" data-h="140" data-v="2400"></div>
+                        <div class="bar-cost" data-h="122" data-v="2100"></div>
+                    </div>
+                    <div class="bar-lbl">Q1 · 净利 300</div>
+                </div>
+                <div class="bar-group">
+                    <div class="bar-pair">
+                        <div class="bar-rev" data-h="169" data-v="2900"></div>
+                        <div class="bar-cost" data-h="134" data-v="2300"></div>
+                    </div>
+                    <div class="bar-lbl">Q2 · 净利 600</div>
+                </div>
+                <div class="bar-group">
+                    <div class="bar-pair">
+                        <div class="bar-rev" data-h="204" data-v="3500"></div>
+                        <div class="bar-cost" data-h="146" data-v="2500"></div>
+                    </div>
+                    <div class="bar-lbl">Q3 · 净利 1000</div>
+                </div>
+                <div class="bar-group">
+                    <div class="bar-pair">
+                        <div class="bar-rev" data-h="233" data-v="4000"></div>
+                        <div class="bar-cost" data-h="154" data-v="2640"></div>
+                    </div>
+                    <div class="bar-lbl">Q4 · 净利 1360</div>
+                </div>
+            </div>
+            <div class="legend step d5">
+                <span><span class="sw" style="background:var(--grad)"></span>营收</span>
+                <span><span class="sw" style="background:rgba(255,255,255,.16)"></span>成本</span>
+                <span>全年净利率 <b style="color:var(--yellow)">25.5%</b>（上年 23.1%）</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 收入结构 ============ -->
+    <section class="slide" data-slide="5">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">04 · 收入结构</div>
+            <h2 class="slide-title step d2">收入从哪来，一眼看穿</h2>
+            <p class="slide-sub step d3">点击上方维度按钮 + 下方图例，切换不同切法</p>
+            <div class="dim-switch step d4">
+                <button class="dim-btn on" data-dim="product">按产品线</button>
+                <button class="dim-btn" data-dim="channel">按渠道</button>
+            </div>
+            <div class="donut-layout step d5">
+                <div class="donut-box">
+                    <svg width="260" height="260" viewBox="0 0 260 260">
+                        <circle cx="130" cy="130" r="96" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="34"/>
+                        <g id="donutSegs"></g>
+                    </svg>
+                    <div class="donut-center">
+                        <div class="dc-val" id="donutMain">100%</div>
+                        <div class="dc-lbl" id="donutLbl">合计</div>
+                    </div>
+                </div>
+                <div class="legend-list" id="donutLegend"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 用户增长 ============ -->
+    <section class="slide" data-slide="6">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">05 · 用户增长</div>
+            <h2 class="slide-title step d2">全年净增 480 万用户</h2>
+            <p class="slide-sub step d3">季度新增（万人）· 后半年明显加速</p>
+            <div class="chart-card step d4">
+                <svg class="area-chart" id="areaChart" viewBox="0 0 960 320" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+            <div class="user-kpi step d5">
+                <span>Q1 新增 <b>80</b> 万</span>
+                <span>Q2 新增 <b>110</b> 万</span>
+                <span>Q3 新增 <b>130</b> 万</span>
+                <span>Q4 新增 <b>160</b> 万</span>
+                <span class="u-up">全年 <b>480</b> 万</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 市场格局 ============ -->
+    <section class="slide" data-slide="7">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">06 · 市场格局</div>
+            <h2 class="slide-title step d2">份额稳居第二，差距在缩小</h2>
+            <p class="slide-sub step d3">主要玩家市场份额 · 2025 年末</p>
+            <div class="hbar-wrap step d4" id="marketBars">
+                <div class="hbar-row we">
+                    <div class="hbar-name">星辰科技<span class="we-tag">我们</span></div>
+                    <div class="hbar-track"><div class="hbar-fill" data-w="23.4"></div></div>
+                    <div class="hbar-val">23.4%</div>
+                </div>
+                <div class="hbar-row">
+                    <div class="hbar-name">竞对甲</div>
+                    <div class="hbar-track"><div class="hbar-fill" data-w="31.0"></div></div>
+                    <div class="hbar-val">31.0%</div>
+                </div>
+                <div class="hbar-row">
+                    <div class="hbar-name">竞对乙</div>
+                    <div class="hbar-track"><div class="hbar-fill" data-w="18.2"></div></div>
+                    <div class="hbar-val">18.2%</div>
+                </div>
+                <div class="hbar-row">
+                    <div class="hbar-name">其他</div>
+                    <div class="hbar-track"><div class="hbar-fill" data-w="27.4"></div></div>
+                    <div class="hbar-val">27.4%</div>
+                </div>
+            </div>
+            <p class="slide-sub step d5" style="margin-top:30px;text-align:center;margin-bottom:0">与第一名的差距从 <b style="color:var(--red)">11.2pp</b> 缩小到 <b style="color:var(--cyan)">7.6pp</b></p>
+        </div>
+    </section>
+
+    <!-- ============ 能力雷达 ============ -->
+    <section class="slide" data-slide="8">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">07 · 能力对比</div>
+            <h2 class="slide-title step d2">五维能力，跟竞对正面比</h2>
+            <p class="slide-sub step d3">评分制：0-100 · 产品与创新是最大优势</p>
+            <div class="radar-layout step d4">
+                <div class="radar-box">
+                    <svg id="radarSvg" viewBox="0 0 340 340"></svg>
+                </div>
+                <div class="radar-legend">
+                    <div class="rl-item"><span class="rl-sq" style="background:var(--grad)"></span>星辰科技</div>
+                    <div class="rl-item"><span class="rl-sq" style="background:var(--red)"></span>竞对甲</div>
+                    <div class="rl-item"><span class="rl-sq" style="background:var(--text2)"></span>行业均值</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 目标达成 ============ -->
+    <section class="slide" data-slide="9">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">08 · 目标达成</div>
+            <h2 class="slide-title step d2">年初立的目标，兑现了多少</h2>
+            <p class="slide-sub step d3">四个核心目标完成率</p>
+            <div class="goal-grid">
+                <div class="goal-card step d3">
+                    <div class="ring-box">
+                        <svg width="132" height="132" viewBox="0 0 132 132">
+                            <circle cx="66" cy="66" r="54" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12"/>
+                            <circle class="ring" cx="66" cy="66" r="54" fill="none" stroke="#667eea" stroke-width="12" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" data-target="0.92"/>
+                        </svg>
+                        <div class="ring-val"><div class="rv"><span class="count" data-target="92" data-suffix="%">0</span></div><div class="rvl">完成率</div></div>
+                    </div>
+                    <h4>营收目标</h4>
+                    <div class="goal-sub">目标 1.4 亿 · 达成 1.28 亿</div>
+                </div>
+                <div class="goal-card step d4">
+                    <div class="ring-box">
+                        <svg width="132" height="132" viewBox="0 0 132 132">
+                            <circle cx="66" cy="66" r="54" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12"/>
+                            <circle class="ring" cx="66" cy="66" r="54" fill="none" stroke="#4ecdc4" stroke-width="12" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" data-target="0.88"/>
+                        </svg>
+                        <div class="ring-val"><div class="rv"><span class="count" data-target="88" data-suffix="%">0</span></div><div class="rvl">完成率</div></div>
+                    </div>
+                    <h4>利润目标</h4>
+                    <div class="goal-sub">目标 3700 万 · 达成 3260 万</div>
+                </div>
+                <div class="goal-card step d5">
+                    <div class="ring-box">
+                        <svg width="132" height="132" viewBox="0 0 132 132">
+                            <circle cx="66" cy="66" r="54" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12"/>
+                            <circle class="ring" cx="66" cy="66" r="54" fill="none" stroke="#feca57" stroke-width="12" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" data-target="0.96"/>
+                        </svg>
+                        <div class="ring-val"><div class="rv"><span class="count" data-target="96" data-suffix="%">0</span></div><div class="rvl">完成率</div></div>
+                    </div>
+                    <h4>用户目标</h4>
+                    <div class="goal-sub">目标 500 万 · 达成 480 万</div>
+                </div>
+                <div class="goal-card step d6">
+                    <div class="ring-box">
+                        <svg width="132" height="132" viewBox="0 0 132 132">
+                            <circle cx="66" cy="66" r="54" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12"/>
+                            <circle class="ring" cx="66" cy="66" r="54" fill="none" stroke="#ff6b6b" stroke-width="12" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" data-target="1.0"/>
+                        </svg>
+                        <div class="ring-val"><div class="rv"><span class="count" data-target="101" data-suffix="%">0</span></div><div class="rvl">完成率</div></div>
+                    </div>
+                    <h4>份额目标</h4>
+                    <div class="goal-sub">目标 23% · 达成 23.4%</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 展望 ============ -->
+    <section class="slide" data-slide="10">
+        <div class="slide-inner">
+            <div class="sec-tag step d1">展望 · 2026</div>
+            <h2 class="slide-title step d2">明年，三件事</h2>
+            <p class="slide-sub step d3">从「增长」走向「高质量增长」</p>
+            <div class="outlook-grid">
+                <div class="outlook-card step d3">
+                    <div class="oc-ico">🧩</div>
+                    <h4>产品纵深</h4>
+                    <p>把 A 产品线做成行业第一，补齐 B 产品线生态缺口。</p>
+                </div>
+                <div class="outlook-card step d4">
+                    <div class="oc-ico">🌏</div>
+                    <h4>渠道下沉</h4>
+                    <p>线上占比过半后，发力线下与分销，打开二线以下市场。</p>
+                </div>
+                <div class="outlook-card step d5">
+                    <div class="oc-ico">⚙️</div>
+                    <h4>效率提升</h4>
+                    <p>成本率压降 2pp，让利润增速继续跑赢营收增速。</p>
+                </div>
+            </div>
+            <div class="target-bar step d6">2026 年度目标：营收 <b class="grad-text">1.7 亿</b> · 活跃用户 <b class="grad-text">700 万</b> · 净利率 <b class="grad-text">28%</b></div>
+        </div>
+    </section>
+
+    <!-- ============ 结尾 ============ -->
+    <section class="slide" data-slide="11">
+        <div class="slide-inner end-content">
+            <div class="end-big step d1">谢谢观看<span class="grad-text"> 👏</span></div>
+            <p class="end-sub step d2">这份 PPT 没有用 PowerPoint ——<br>它是 <b class="grad-text">AI 生成的一段 HTML</b>：翻页、动画、图表、交互，全在代码里。</p>
+            <div class="end-actions step d3">
+                <button class="btn btn-primary" id="replayBtn">↺ 从头再看一遍</button>
+                <a class="btn btn-ghost" href="../../index.html">🛠️ 回工具站</a>
+            </div>
+            <div class="end-meta step d4">单文件 · 无框架 · 手机也能看 · 按 Ctrl/Cmd + U 可查看全部源码</div>
+        </div>
+    </section>
+
+</div>
+
+<!-- 导航控件 -->
+<div class="key-hint"><span class="k">←</span><span class="k">→</span> 或 <span class="k">空格</span> 翻页</div>
+<div class="ppt-nav">
+    <button class="nav-arrow" id="prevBtn" title="上一页">←</button>
+    <span class="page-num"><b id="curPage">1</b> / <span id="totalPage">12</span></span>
+    <button class="nav-arrow" id="nextBtn" title="下一页">→</button>
+</div>
+
+<script>
+/* ============ 翻页引擎 ============ */
+(function(){
+    const deck = document.getElementById('deck');
+    const slides = [...document.querySelectorAll('.slide')];
+    const total = slides.length;
+    document.getElementById('totalPage').textContent = total;
+    const bar = document.getElementById('progressBar');
+    const curEl = document.getElementById('curPage');
+    const isMobile = window.matchMedia('(max-width: 768px)');
+    let cur = 0;
+
+    function goto(i){
+        if (isMobile.matches) return;
+        cur = Math.max(0, Math.min(total - 1, i));
+        deck.style.transform = 'translateY(-' + (cur * 100) + 'vh)';
+        slides.forEach((s, idx) => s.classList.toggle('active', idx === cur));
+        curEl.textContent = cur + 1;
+        bar.style.width = ((cur + 1) / total * 100) + '%';
+        document.dispatchEvent(new CustomEvent('slidechange', { detail: cur }));
+    }
+    function next(){ goto(cur + 1); }
+    function prev(){ goto(cur - 1); }
+
+    document.addEventListener('keydown', e => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+        else if (e.key === 'Home') goto(0);
+        else if (e.key === 'End') goto(total - 1);
+    });
+
+    // 点击翻页（避开可交互元素和顶部导航栏）
+    document.addEventListener('click', e => {
+        if (isMobile.matches) return;
+        if (e.clientY < 64) return; // 顶部导航栏区域不翻页
+        if (e.target.closest('input, button, a, .toc-card, .legend-item, .dim-btn')) return;
+        const x = e.clientX;
+        if (x > window.innerWidth * 0.7) next();
+        else if (x < window.innerWidth * 0.3) prev();
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', next);
+    document.getElementById('prevBtn').addEventListener('click', prev);
+    document.getElementById('replayBtn').addEventListener('click', () => goto(0));
+    document.querySelectorAll('.toc-card').forEach(c => {
+        c.addEventListener('click', () => goto(parseInt(c.dataset.goto)));
+    });
+
+    // 移动端：全部激活 + 隐藏 deck 位移
+    if (isMobile.matches){
+        slides.forEach(s => s.classList.add('active'));
+        deck.style.transform = 'none';
+    }
+
+    // 初始
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === (isMobile.matches ? idx : 0)));
+    if (!isMobile.matches) goto(0);
+    window.gotoSlide = goto;
+})();
+
+/* ============ 封面粒子 ============ */
+(function(){
+    const canvas = document.getElementById('particles');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let W, H, ps = [];
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    function resize(){
+        W = canvas.offsetWidth; H = canvas.offsetHeight;
+        canvas.width = W * DPR; canvas.height = H * DPR;
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        const n = Math.min(70, Math.floor(W * H / 18000));
+        ps = Array.from({length: n}, () => ({
+            x: Math.random() * W, y: Math.random() * H,
+            vx: (Math.random() - .5) * .5, vy: (Math.random() - .5) * .5,
+            r: Math.random() * 2 + 1,
+            c: ['#667eea','#764ba2','#4ecdc4','#feca57'][Math.floor(Math.random() * 4)]
+        }));
+    }
+    function draw(){
+        ctx.clearRect(0, 0, W, H);
+        for (let i = 0; i < ps.length; i++){
+            const p = ps[i];
+            p.x += p.vx; p.y += p.vy;
+            if (p.x < 0 || p.x > W) p.vx *= -1;
+            if (p.y < 0 || p.y > H) p.vy *= -1;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.c; ctx.globalAlpha = .7; ctx.fill();
+            for (let j = i + 1; j < ps.length; j++){
+                const q = ps[j], dx = p.x - q.x, dy = p.y - q.y, d = Math.hypot(dx, dy);
+                if (d < 120){
+                    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+                    ctx.strokeStyle = '#667eea'; ctx.globalAlpha = (1 - d / 120) * .2; ctx.lineWidth = 1; ctx.stroke();
+                }
+            }
+        }
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
+    }
+    window.addEventListener('resize', resize);
+    resize(); draw();
+})();
+
+/* ============ 工具函数：数字滚动 ============ */
+function animateCount(el, target, dec, suffix, dur){
+    const start = performance.now();
+    function tick(t){
+        const p = Math.min((t - start) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const v = target * eased;
+        el.textContent = v.toFixed(dec) + (suffix || '');
+        if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+/* ============ KPI / 进度环数字滚动 ============ */
+(function(){
+    const counts = document.querySelectorAll('.count');
+    const seen = new Set();
+    function trigger(){
+        const active = document.querySelector('.slide.active');
+        active.querySelectorAll('.count').forEach(el => {
+            if (seen.has(el)) return;
+            const target = parseFloat(el.dataset.target);
+            const dec = parseInt(el.dataset.dec || 0);
+            const suffix = el.dataset.suffix || '';
+            seen.add(el);
+            animateCount(el, target, dec, suffix, 1400);
+        });
+    }
+    document.addEventListener('slidechange', () => trigger());
+    if (window.matchMedia('(max-width: 768px)').matches) trigger();
+})();
+
+/* ============ 折线图（营收）============ */
+(function(){
+    const svg = document.getElementById('lineChart');
+    if (!svg) return;
+    const W = 960, H = 320, ML = 60, MR = 30, MT = 30, MB = 50;
+    const data = [
+        { q: 'Q1', v: 2400 }, { q: 'Q2', v: 2900 }, { q: 'Q3', v: 3500 }, { q: 'Q4', v: 4000 }
+    ];
+    const maxV = 4500;
+    const x = i => ML + i * (W - ML - MR) / (data.length - 1);
+    const y = v => MT + (1 - v / maxV) * (H - MT - MB);
+
+    let html = '';
+    // 网格
+    for (let g = 0; g <= 4; g++){
+        const gy = MT + g * (H - MT - MB) / 4;
+        html += '<line class="grid-line" x1="' + ML + '" y1="' + gy + '" x2="' + (W - MR) + '" y2="' + gy + '"/>';
+        html += '<text class="axis-label" x="' + (ML - 12) + '" y="' + (gy + 4) + '" text-anchor="end">' + Math.round(maxV * (1 - g / 4)) + '</text>';
+    }
+    const pts = data.map((d, i) => x(i) + ',' + y(d.v));
+    html += '<polyline class="line-path" points="' + pts.join(' ') + '" fill="none" stroke="url(#lineGrad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/>';
+    data.forEach((d, i) => {
+        html += '<circle class="dot" cx="' + x(i) + '" cy="' + y(d.v) + '" r="6" stroke="' + (i === data.length - 1 ? '#feca57' : '#667eea') + '"/>';
+        html += '<text class="axis-label" x="' + x(i) + '" y="' + (y(d.v) - 16) + '" text-anchor="middle">' + d.v + '</text>';
+        html += '<text class="axis-label" x="' + x(i) + '" y="' + (H - MB + 28) + '" text-anchor="middle">' + d.q + '</text>';
+    });
+    html += '<defs><linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#4ecdc4"/></linearGradient></defs>';
+    svg.innerHTML = html;
+
+    const line = svg.querySelector('.line-path');
+    const slider = document.getElementById('timeline');
+    const readout = document.getElementById('timelineVal');
+    const cumulative = data.map(d => d.v);
+    const total = cumulative.reduce((a, b) => a + b, 0);
+
+    function setProgress(p){
+        line.style.strokeDasharray = '1';
+        line.style.strokeDashoffset = String(1 - p);
+        // 累计营收 = 按进度比例计算
+        readout.textContent = Math.round(total * p);
+    }
+
+    // 进页自动播放 + 滑块拖动
+    let autoPlayed = false;
+    function play(){
+        if (autoPlayed) return;
+        autoPlayed = true;
+        const t0 = performance.now();
+        function tick(t){
+            const p = Math.min((t - t0) / 1600, 1);
+            setProgress(p);
+            slider.value = Math.round(p * 100);
+            if (p < 1) requestAnimationFrame(tick);
+            else slider.value = 100;
+        }
+        requestAnimationFrame(tick);
+    }
+    slider.addEventListener('input', () => {
+        autoPlayed = true;
+        setProgress(slider.value / 100);
+    });
+    document.addEventListener('slidechange', e => { if (e.detail === 3) play(); });
+    if (window.matchMedia('(max-width: 768px)').matches) play();
+})();
+
+/* ============ 柱状图（利润）============ */
+(function(){
+    const bars = document.querySelectorAll('#profitBars .bar-rev, #profitBars .bar-cost');
+    function grow(){
+        bars.forEach((b, i) => setTimeout(() => { b.style.height = b.dataset.h + 'px'; }, i * 70));
+    }
+    document.addEventListener('slidechange', e => { if (e.detail === 4) grow(); });
+    if (window.matchMedia('(max-width: 768px)').matches) grow();
+})();
+
+/* ============ 环形图 + 维度切换 ============ */
+(function(){
+    const segs = document.getElementById('donutSegs');
+    const legend = document.getElementById('donutLegend');
+    const main = document.getElementById('donutMain');
+    const lbl = document.getElementById('donutLbl');
+    const C = 2 * Math.PI * 96;
+    const COLORS = ['#667eea', '#764ba2', '#4ecdc4', '#feca57'];
+
+    const DIMS = {
+        product: { name: '按产品线', items: [ {n:'A 产品线', v:38}, {n:'B 产品线', v:27}, {n:'C 产品线', v:22}, {n:'其他', v:13} ] },
+        channel: { name: '按渠道', items: [ {n:'线上直销', v:45}, {n:'线下门店', v:32}, {n:'分销合作', v:23} ] }
+    };
+    let curDim = 'product';
+
+    function render(){
+        const items = DIMS[curDim].items;
+        segs.innerHTML = '';
+        let acc = 0;
+        items.forEach((it, i) => {
+            const frac = it.v / 100;
+            const len = frac * C;
+            const gap = 8; // 段间距
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', 130); circle.setAttribute('cy', 130); circle.setAttribute('r', 96);
+            circle.setAttribute('fill', 'none');
+            circle.setAttribute('stroke', COLORS[i % COLORS.length]);
+            circle.setAttribute('stroke-width', 34);
+            circle.setAttribute('stroke-linecap', 'butt');
+            circle.setAttribute('stroke-dasharray', (len - gap) + ' ' + (C - len + gap));
+            circle.setAttribute('stroke-dashoffset', -acc * C / 100);
+            circle.style.transition = 'stroke-dasharray .8s ease, stroke-dashoffset .8s ease';
+            segs.appendChild(circle);
+            acc += it.v;
+        });
+        // 图例
+        legend.innerHTML = '';
+        items.forEach((it, i) => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.innerHTML = '<span class="li-color" style="background:' + COLORS[i % COLORS.length] + '"></span><span class="li-name">' + it.n + '</span><span class="li-val">' + it.v + '%</span>';
+            legend.appendChild(item);
+        });
+        lbl.textContent = DIMS[curDim].name;
+        main.textContent = '100%';
+    }
+
+    document.querySelectorAll('.dim-btn').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('.dim-btn').forEach(x => x.classList.remove('on'));
+            b.classList.add('on');
+            curDim = b.dataset.dim;
+            render();
+        });
+    });
+    render();
+})();
+
+/* ============ 面积图（用户增长）============ */
+(function(){
+    const svg = document.getElementById('areaChart');
+    if (!svg) return;
+    const W = 960, H = 320, ML = 60, MR = 30, MT = 30, MB = 50;
+    const data = [
+        { q: 'Q1', v: 80 }, { q: 'Q2', v: 110 }, { q: 'Q3', v: 130 }, { q: 'Q4', v: 160 }
+    ];
+    const maxV = 200;
+    const x = i => ML + i * (W - ML - MR) / (data.length - 1);
+    const y = v => MT + (1 - v / maxV) * (H - MT - MB);
+    let html = '';
+    for (let g = 0; g <= 4; g++){
+        const gy = MT + g * (H - MT - MB) / 4;
+        html += '<line class="grid-line" x1="' + ML + '" y1="' + gy + '" x2="' + (W - MR) + '" y2="' + gy + '"/>';
+        html += '<text class="axis-label" x="' + (ML - 12) + '" y="' + (gy + 4) + '" text-anchor="end">' + Math.round(maxV * (1 - g / 4)) + '</text>';
+    }
+    const pts = data.map((d, i) => x(i) + ',' + y(d.v));
+    const areaPts = pts.join(' ') + ' ' + x(data.length - 1) + ',' + (H - MB) + ' ' + x(0) + ',' + (H - MB);
+    html += '<polygon points="' + areaPts + '" fill="url(#areaGrad)" opacity="0"/>';
+    html += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#4ecdc4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/>';
+    data.forEach((d, i) => {
+        html += '<circle cx="' + x(i) + '" cy="' + y(d.v) + '" r="6" fill="#0f0f1a" stroke="#4ecdc4" stroke-width="3"/>';
+        html += '<text class="axis-label" x="' + x(i) + '" y="' + (y(d.v) - 16) + '" text-anchor="middle">' + d.v + '</text>';
+        html += '<text class="axis-label" x="' + x(i) + '" y="' + (H - MB + 28) + '" text-anchor="middle">' + d.q + '</text>';
+    });
+    html += '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4ecdc4" stop-opacity=".35"/><stop offset="100%" stop-color="#4ecdc4" stop-opacity="0"/></linearGradient></defs>';
+    svg.innerHTML = html;
+    const poly = svg.querySelector('polyline');
+    const area = svg.querySelector('polygon');
+    function play(){
+        poly.style.strokeDasharray = '1';
+        poly.style.strokeDashoffset = '1';
+        area.style.opacity = '0';
+        const t0 = performance.now();
+        function tick(t){
+            const p = Math.min((t - t0) / 1600, 1);
+            const eased = 1 - Math.pow(1 - p, 3);
+            poly.style.strokeDashoffset = String(1 - eased);
+            area.style.opacity = String(eased * .9);
+            if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+    document.addEventListener('slidechange', e => { if (e.detail === 6) play(); });
+    if (window.matchMedia('(max-width: 768px)').matches) play();
+})();
+
+/* ============ 市场横向条形 ============ */
+(function(){
+    const fills = document.querySelectorAll('#marketBars .hbar-fill');
+    function grow(){
+        fills.forEach((f, i) => setTimeout(() => { f.style.width = f.dataset.w + '%'; }, i * 120));
+    }
+    document.addEventListener('slidechange', e => { if (e.detail === 7) grow(); });
+    if (window.matchMedia('(max-width: 768px)').matches) grow();
+})();
+
+/* ============ 雷达图 ============ */
+(function(){
+    const svg = document.getElementById('radarSvg');
+    if (!svg) return;
+    const CX = 170, CY = 175, R = 118;
+    const axes = ['产品', '渠道', '品牌', '服务', '创新'];
+    const series = [
+        { name: '我们', color: '#667eea', vals: [92, 78, 70, 88, 95] },
+        { name: '竞对甲', color: '#ff6b6b', vals: [80, 85, 90, 75, 60] },
+        { name: '行业均值', color: '#a0a0b0', vals: [65, 60, 55, 70, 50] }
+    ];
+    const n = axes.length;
+    const pt = (i, v) => {
+        const ang = -Math.PI / 2 + i * 2 * Math.PI / n;
+        const r = R * v / 100;
+        return (CX + r * Math.cos(ang)).toFixed(1) + ',' + (CY + r * Math.sin(ang)).toFixed(1);
+    };
+    let html = '';
+    // 网格
+    for (let ring = 1; ring <= 4; ring++){
+        const pts = [];
+        for (let i = 0; i < n; i++) pts.push(pt(i, ring * 25));
+        html += '<polygon points="' + pts.join(' ') + '" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.1)"/>';
+    }
+    for (let i = 0; i < n; i++){
+        html += '<line x1="' + CX + '" y1="' + CY + '" x2="' + pt(i, 100).split(',')[0] + '" y2="' + pt(i, 100).split(',')[1] + '" stroke="rgba(255,255,255,.1)"/>';
+        const lx = pt(i, 118).split(',')[0], ly = pt(i, 118).split(',')[1];
+        html += '<text x="' + lx + '" y="' + ly + '" fill="var(--text2)" font-size="13" text-anchor="middle" dominant-baseline="middle">' + axes[i] + '</text>';
+    }
+    // 数据多边形
+    series.forEach(s => {
+        const pts = s.vals.map((v, i) => pt(i, v));
+        html += '<polygon class="radar-poly" data-name="' + s.name + '" points="' + pts.join(' ') + '" fill="' + s.color + '" fill-opacity="0" stroke="' + s.color + '" stroke-width="2.5" stroke-linejoin="round"/>';
+    });
+    svg.innerHTML = html;
+
+    function play(){
+        svg.querySelectorAll('.radar-poly').forEach((poly, i) => {
+            setTimeout(() => {
+                poly.style.transition = 'fill-opacity .8s ease';
+                poly.setAttribute('fill-opacity', .18 + i * 0);
+            }, i * 200);
+        });
+    }
+    document.addEventListener('slidechange', e => { if (e.detail === 8) play(); });
+    if (window.matchMedia('(max-width: 768px)').matches) play();
+})();
+
+/* ============ 进度环 ============ */
+(function(){
+    const rings = document.querySelectorAll('.ring');
+    function play(){
+        rings.forEach((ring, i) => {
+            setTimeout(() => {
+                const t = parseFloat(ring.dataset.target);
+                const C = 339.3;
+                ring.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(.22,.61,.36,1)';
+                ring.style.strokeDashoffset = String(C * (1 - t));
+            }, i * 150);
+        });
+    }
+    document.addEventListener('slidechange', e => { if (e.detail === 9) play(); });
+    if (window.matchMedia('(max-width: 768px)').matches) play();
+})();
+</script>
+</body>
+</html>

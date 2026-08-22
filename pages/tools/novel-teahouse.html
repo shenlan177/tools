@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!-- 共享导航组件 (tools 站统一顶部导航) -->
+<script src="../../assets/js/nav-component.js"></script>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小说茶馆 - 讨论与推书</title>
+<style>
+  :root {
+    --bg-primary: #0f0f1a;
+    --bg-secondary: #1a1a2e;
+    --bg-card: rgba(255,255,255,.05);
+    --text-primary: #fff;
+    --text-secondary: #a0a0b0;
+    --accent-gradient: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+    --accent-color: #667eea;
+    --border-color: rgba(255,255,255,.1);
+    --danger: #ef4444;
+    --ok: #34d399;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body.has-tools-nav { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0f0f1a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  /* ===== 顶栏 ===== */
+  .topbar {
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    gap:14px; margin-bottom:22px;
+  }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand-icon {
+    width:46px; height:46px; border-radius:12px; flex:none;
+    background:var(--accent-gradient);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; box-shadow:0 4px 14px rgba(102,126,234,.35);
+  }
+  .brand h1 { font-size:20px; font-weight:700; }
+  .brand p { font-size:12px; color:var(--text-secondary); margin-top:2px; }
+  .top-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+  .btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 14px; border-radius:10px; border:1px solid var(--border-color);
+    background:rgba(255,255,255,.06); color:var(--text-primary);
+    font-size:13px; font-weight:600; cursor:pointer; transition:all .2s;
+    text-decoration:none; user-select:none;
+  }
+  .btn:hover { background:rgba(255,255,255,.12); }
+  .btn.primary { background:var(--accent-gradient); border:none; box-shadow:0 3px 10px rgba(102,126,234,.3); }
+  .btn.primary:hover { filter:brightness(1.12); }
+  .btn.danger { border-color:rgba(239,68,68,.4); color:#fca5a5; }
+  .btn.danger:hover { background:rgba(239,68,68,.15); }
+  .btn.small { padding:4px 10px; font-size:12px; border-radius:8px; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+
+  .chip {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700;
+    background:var(--accent-gradient); cursor:pointer; transition:filter .2s;
+  }
+  .chip:hover { filter:brightness(1.15); }
+
+  /* ===== 搜索 ===== */
+  .searchbar { display:flex; gap:10px; margin-bottom:20px; }
+  .searchbar input {
+    flex:1; padding:10px 14px; border-radius:10px; border:1px solid var(--border-color);
+    background:var(--bg-secondary); color:var(--text-primary); font-size:14px; outline:none;
+  }
+  .searchbar input:focus { border-color:var(--accent-color); }
+
+  /* ===== 帖子列表 ===== */
+  .post-card {
+    background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px;
+    padding:18px 20px; margin-bottom:14px; cursor:pointer; transition:all .2s;
+  }
+  .post-card:hover { border-color:var(--accent-color); background:rgba(255,255,255,.08); transform:translateY(-2px); }
+  .post-card .row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .post-card .ptitle { font-size:16px; font-weight:700; line-height:1.4; }
+  .post-card .meta { font-size:12px; color:var(--text-secondary); margin-top:6px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .post-card .summary { font-size:13px; color:var(--text-secondary); margin-top:8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .post-card .foot { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:999px; background:rgba(102,126,234,.18); color:#a5b4fc; border:1px solid rgba(102,126,234,.35); }
+  .badge.reply { background:rgba(52,211,153,.12); color:#6ee7b7; border-color:rgba(52,211,153,.35); }
+  .badge.book { background:rgba(251,146,60,.12); color:#fdba74; border-color:rgba(251,146,60,.35); }
+  .empty {
+    text-align:center; padding:70px 20px; color:var(--text-secondary); font-size:14px;
+    border:1px dashed var(--border-color); border-radius:14px;
+  }
+
+  /* ===== 详情页 ===== */
+  .detail-head { margin-bottom:16px; }
+  .detail-head .back { margin-bottom:14px; }
+  .detail-title { font-size:22px; font-weight:700; line-height:1.4; }
+  .detail-meta { font-size:12px; color:var(--text-secondary); margin-top:8px; display:flex; gap:14px; flex-wrap:wrap; }
+  .detail-content {
+    background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px;
+    padding:20px; font-size:14.5px; white-space:pre-wrap; line-height:1.8;
+  }
+  .section-title { font-size:15px; font-weight:700; margin:24px 0 12px; display:flex; align-items:center; gap:8px; }
+  .section-title .sub { font-size:11px; font-weight:400; color:var(--text-secondary); }
+
+  /* ===== 推荐书卡 ===== */
+  .rec-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+  .book-card {
+    background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; padding:16px;
+    transition:all .2s;
+  }
+  .book-card:hover { border-color:var(--accent-color); }
+  .book-card .btitle { font-size:15px; font-weight:700; }
+  .book-card .bauthor { font-size:12px; color:var(--accent-color); margin-top:2px; }
+  .book-card .btags { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; }
+  .book-card .bintro { font-size:13px; color:var(--text-secondary); margin-top:10px; }
+  .book-card .bwhy {
+    font-size:12.5px; margin-top:10px; padding:8px 10px; border-radius:8px;
+    background:rgba(102,126,234,.1); border:1px solid rgba(102,126,234,.25); color:#c7d2fe;
+  }
+  .book-card .bwhy .src { display:block; font-size:11px; color:var(--text-secondary); margin-bottom:2px; }
+
+  /* ===== 回帖 ===== */
+  .reply-card { background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+  .reply-card .rmeta { font-size:12px; color:var(--text-secondary); display:flex; gap:12px; align-items:center; }
+  .reply-card .rcontent { font-size:14px; margin-top:8px; white-space:pre-wrap; line-height:1.7; }
+  .reply-form { display:flex; gap:10px; margin-top:16px; }
+  .reply-form textarea {
+    flex:1; padding:10px 14px; border-radius:10px; border:1px solid var(--border-color);
+    background:var(--bg-secondary); color:var(--text-primary); font-size:14px; outline:none;
+    resize:vertical; min-height:70px; font-family:inherit;
+  }
+  .reply-form textarea:focus { border-color:var(--accent-color); }
+
+  /* ===== 弹层 ===== */
+  .mask {
+    position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:8000;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal {
+    width:100%; max-width:640px; max-height:86vh; overflow-y:auto;
+    background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:16px;
+    padding:22px; box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .modal h3 { font-size:17px; font-weight:700; margin-bottom:16px; }
+  .modal label { display:block; font-size:12px; color:var(--text-secondary); margin:14px 0 6px; font-weight:600; }
+  .modal input[type=text], .modal textarea {
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color);
+    background:var(--bg-primary); color:var(--text-primary); font-size:14px; outline:none; font-family:inherit;
+  }
+  .modal textarea { resize:vertical; min-height:90px; }
+  .modal input:focus, .modal textarea:focus { border-color:var(--accent-color); }
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+  .modal-close { position:sticky; float:right; top:0; width:30px; height:30px; border-radius:8px; border:1px solid var(--border-color);
+    background:rgba(255,255,255,.06); color:var(--text-secondary); cursor:pointer; font-size:14px; margin-top:-6px; }
+  .modal-close:hover { color:#fff; }
+
+  /* 选书列表 */
+  .pick-list { max-height:220px; overflow-y:auto; border:1px solid var(--border-color); border-radius:10px; padding:8px; margin-top:6px; }
+  .pick-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; cursor:pointer; font-size:13px; }
+  .pick-item:hover { background:rgba(255,255,255,.06); }
+  .pick-item input { accent-color:#667eea; }
+  .pick-item .pt { color:var(--text-secondary); font-size:12px; }
+
+  /* 书库 */
+  .lib-filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .fchip { font-size:12px; padding:4px 12px; border-radius:999px; border:1px solid var(--border-color); cursor:pointer; color:var(--text-secondary); transition:all .2s; background:transparent; }
+  .fchip.active { background:var(--accent-gradient); color:#fff; border-color:transparent; }
+  .lib-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
+
+  /* toast */
+  .toast {
+    position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--bg-secondary); border:1px solid var(--border-color); color:var(--text-primary);
+    padding:10px 20px; border-radius:10px; font-size:13px; z-index:9999; opacity:0;
+    transition:all .3s; pointer-events:none; box-shadow:0 8px 30px rgba(0,0,0,.4);
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .muted { color:var(--text-secondary); }
+  .row-between { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  @media (max-width:640px) {
+    .wrap { padding:18px 14px 70px; }
+    .brand h1 { font-size:17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">📚</div>
+      <div>
+        <h1>小说茶馆</h1>
+        <p>聊聊小说，顺便给你推书</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="userChip" class="chip" title="点击切换用户">👤 <span id="userChipName"></span></span>
+      <button class="btn" id="btnLibrary">📖 书库</button>
+      <button class="btn primary" id="btnNewPost">✍️ 发帖</button>
+    </div>
+  </div>
+
+  <!-- 搜索 -->
+  <div class="searchbar">
+    <input id="searchInput" type="text" placeholder="搜索帖子：标题、内容、标签、作者…">
+  </div>
+
+  <!-- 帖子列表 -->
+  <div id="postList"></div>
+
+  <!-- 详情视图（默认隐藏） -->
+  <div id="detailView" style="display:none">
+    <div class="detail-head">
+      <button class="btn small back" id="btnBack">← 返回列表</button>
+      <div class="detail-title" id="dTitle"></div>
+      <div class="detail-meta" id="dMeta"></div>
+    </div>
+    <div class="detail-content" id="dContent"></div>
+
+    <div class="section-title">📚 相关推荐 <span class="sub" id="recSub"></span></div>
+    <div class="rec-grid" id="recGrid"></div>
+
+    <div class="section-title">💬 讨论 <span class="sub" id="replyCount"></span></div>
+    <div id="replyList"></div>
+    <div class="reply-form">
+      <textarea id="replyInput" placeholder="写下你的看法…（会自动匹配相关书籍）"></textarea>
+      <button class="btn primary" id="btnReply" style="align-self:flex-end">回复</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 弹层容器 -->
+<div id="modalRoot"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+/* ================= 数据定义 ================= */
+
+var BUILTIN_BOOKS = [
+  { id:'b1', name:'三体', author:'刘慈欣', tags:['科幻'], intro:'地球文明与三体文明的信息交流、生死搏杀，从文革年代到宇宙末日。', why:'中国科幻的巅峰之作，黑暗森林法则至今让人脊背发凉。' },
+  { id:'b2', name:'基地', author:'艾萨克·阿西莫夫', tags:['科幻'], intro:'心理史学家哈里·谢顿预言银河帝国将亡，建立基地试图缩短黑暗时代。', why:'科幻史上最伟大的史诗之一，"谢顿危机"一环扣一环。' },
+  { id:'b3', name:'沙丘', author:'弗兰克·赫伯特', tags:['科幻'], intro:'沙漠星球厄拉科斯上的香料争夺，少年保罗的王子复仇记。', why:'政治、宗教、生态、人性的宏大寓言，科幻界的《指环王》。' },
+  { id:'b4', name:'球状闪电', author:'刘慈欣', tags:['科幻'], intro:'一个关于球状闪电的诡异之谜，通向宏电子与量子世界的门。', why:'三体之前必读的刘慈欣神作，结尾的浪漫让人难忘。' },
+  { id:'b5', name:'嫌疑人X的献身', author:'东野圭吾', tags:['悬疑','推理'], intro:'天才数学家为爱献身，设下完美的骗局，与物理学家汤川学的对决。', why:'推理小说史上最悲凉的诡计，真相揭晓时你会倒吸凉气。' },
+  { id:'b6', name:'白夜行', author:'东野圭吾', tags:['悬疑','爱情'], intro:'一桩命案牵出两个孩子的二十年人生，在阳光下永远无法牵手。', why:'"我的天空里没有太阳"，绝望而深沉的爱情悲剧。' },
+  { id:'b7', name:'福尔摩斯探案集', author:'柯南·道尔', tags:['悬疑','推理'], intro:'贝克街221B的经典案件集，演绎法的开山之作。', why:'推理小说绕不开的起点，每个案子都是智力体操。' },
+  { id:'b8', name:'无人生还', author:'阿加莎·克里斯蒂', tags:['悬疑','推理'], intro:'十个互不相识的人被邀请到孤岛，按童谣一个个死去，凶手就在他们中间。', why:'暴风雪山庄模式的鼻祖，阿加莎销量最高的一本。' },
+  { id:'b9', name:'恶意', author:'东野圭吾', tags:['悬疑','推理'], intro:'畅销书作家被杀，凶手迅速落网并认罪，真正的动机藏在层层反转之后。', why:'"恨一个人不需要理由"，看完会沉默很久的恶意。' },
+  { id:'b10', name:'明朝那些事儿', author:'当年明月', tags:['历史'], intro:'以幽默笔法讲述明朝三百年兴衰，从朱元璋到崇祯。', why:'历史入门第一书，原来历史可以这么好玩。' },
+  { id:'b11', name:'万历十五年', author:'黄仁宇', tags:['历史'], intro:'1587年一个无关紧要的年份，却是大明帝国走向衰落的缩影。', why:'"大历史观"代表作，以小见大的经典。' },
+  { id:'b12', name:'大秦帝国', author:'孙皓晖', tags:['历史','权谋'], intro:'从商鞅变法到秦统一六国，礼崩乐坏时代的热血与铁血。', why:'战国迷必读，看完想去西安看兵马俑。' },
+  { id:'b13', name:'射雕英雄传', author:'金庸', tags:['武侠'], intro:'傻小子郭靖的成长史，江湖恩怨、家国情怀。', why:'金庸封神之作，侠之大者，为国为民。' },
+  { id:'b14', name:'笑傲江湖', author:'金庸', tags:['武侠','权谋'], intro:'令狐冲的江湖路，正邪之争下的自由与束缚。', why:'"人在江湖，身不由己"的最佳注解，政治隐喻拉满。' },
+  { id:'b15', name:'雪中悍刀行', author:'烽火戏诸侯', tags:['武侠','网文'], intro:'北凉世子徐凤年从纨绔到宗师，庙堂与江湖的宏大画卷。', why:'网文武侠天花板，文笔与格局俱佳，结局泪目。' },
+  { id:'b16', name:'哈利·波特与魔法石', author:'J.K.罗琳', tags:['奇幻'], intro:'十一岁的哈利收到霍格沃茨录取通知书，魔法世界的起点。', why:'无数人的童年与青春，翻开就是整个世界。' },
+  { id:'b17', name:'冰与火之歌', author:'乔治·R·R·马丁', tags:['奇幻','权谋'], intro:'维斯特洛大陆七大王国的权力游戏，谁也不知道下一个死的是谁。', why:'奇幻界的权力史诗，POV写法教科书。' },
+  { id:'b18', name:'魔戒', author:'托尔金', tags:['奇幻'], intro:'霍比特人弗罗多携带至尊魔戒穿越中土，摧毁魔多的末日火山。', why:'现代奇幻文学的总源头，世界观宏大得可怕。' },
+  { id:'b19', name:'解忧杂货店', author:'东野圭吾', tags:['治愈','悬疑'], intro:'浪矢杂货店的时空信箱，连接起一个个烦恼与救赎的故事。', why:'东野圭吾少有的温暖之作，看完想给过去的自己写信。' },
+  { id:'b20', name:'小王子', author:'圣埃克苏佩里', tags:['治愈','文学'], intro:'来自B612星球的小王子，在星际旅行中读懂爱与责任。', why:'写给大人的童话，每个年龄读都有不同的眼泪。' },
+  { id:'b21', name:'山茶文具店', author:'小川糸', tags:['治愈'], intro:'镰仓一家代笔文具店，用一封封信替人传达无法言说的心意。', why:'日式治愈系的温柔，慢节奏生活的理想模样。' },
+  { id:'b22', name:'活着', author:'余华', tags:['文学'], intro:'福贵的一生，从地主少爷到孤寡老人，历经所有亲人的离去。', why:'"人是为了活着本身而活着"，中国文学绕不开的眼泪。' },
+  { id:'b23', name:'平凡的世界', author:'路遥', tags:['文学'], intro:'黄土高原上孙少安、孙少平两兄弟的奋斗人生。', why:'一代人的精神灯塔，苦难中开出的花。' },
+  { id:'b24', name:'百年孤独', author:'加西亚·马尔克斯', tags:['文学','奇幻'], intro:'布恩迪亚家族七代人的兴衰史，马孔多小镇的百年魔幻。', why:'魔幻现实主义的巅峰，孤独的终极诠释。' },
+  { id:'b25', name:'围城', author:'钱钟书', tags:['文学'], intro:'方鸿渐的婚姻与事业，城外的人想进去，城里的人想出来。', why:'中国知识分子群像，讽刺文学的巅峰。' },
+  { id:'b26', name:'庆余年', author:'猫腻', tags:['网文','权谋'], intro:'身世神秘的范闲，在庆国的庙堂与江湖之间步步为营。', why:'男频权谋文的标杆，人物立体、格局宏大。' },
+  { id:'b27', name:'诡秘之主', author:'爱潜水的乌贼', tags:['网文','奇幻','悬疑'], intro:'穿越到蒸汽与机械的维多利亚时代，成为神秘的"愚者"。', why:'近年网文天花板，克苏鲁+蒸汽朋克的奇妙融合。' },
+  { id:'b28', name:'斗破苍穹', author:'天蚕土豆', tags:['网文','奇幻'], intro:'天才少年萧炎跌落谷底后重燃斗志，一步步登上斗气大陆之巅。', why:'"三十年河东三十年河西"——爽文启蒙，热血代名词。' },
+  { id:'b29', name:'霍乱时期的爱情', author:'加西亚·马尔克斯', tags:['爱情','文学'], intro:'穷小子阿里萨用五十三年七个月零十一天等待心上人。', why:'关于爱情的百科全书，等待本身即爱情。' },
+  { id:'b30', name:'傲慢与偏见', author:'简·奥斯汀', tags:['爱情','文学'], intro:'伊丽莎白与达西先生，傲慢与偏见如何走向理解与真爱。', why:'两百年来最经典的爱情故事，翻拍无数次仍不过时。' }
+];
+
+var KEYWORDS = {
+  '科幻': ['科幻','三体','外星','宇宙','星际','太空','银河','机器人','人工智能','AI','未来','时间旅行','末世','末日','废土','科技','物理','量子'],
+  '悬疑': ['悬疑','推理','侦探','凶手','谋杀','案件','密室','破案','谜团','犯罪','连环','真相','诡计'],
+  '历史': ['历史','古代','王朝','皇帝','三国','明朝','唐朝','汉朝','宋朝','权谋','宫斗','穿越','战国','朝代'],
+  '武侠': ['武侠','江湖','武功','内力','剑客','门派','大侠','宗师','武林','侠客','武功'],
+  '奇幻': ['奇幻','魔法','巫师','精灵','龙','异世界','斗气','魔戒','中土','修仙','斗罗','克苏鲁','蒸汽朋克'],
+  '治愈': ['治愈','温暖','感动','温柔','解忧','温情','暖心','治愈系','泪目','催泪'],
+  '文学': ['文学','经典','名著','余华','路遥','百年孤独','围城','现实','命运','时代','散文','小说家'],
+  '网文': ['网文','网络小说','爽文','起点','连载','太监','更新','追更','白金'],
+  '爱情': ['爱情','恋爱','言情','心动','结婚','分手','初恋','虐恋','甜文','感情戏']
+};
+
+var LS_USER = 'noveldiscuss_user';
+var LS_POSTS = function (u) { return 'noveldiscuss_posts_' + u; };
+var LS_BOOKS = function (u) { return 'noveldiscuss_books_' + u; };
+
+/* ================= 状态 ================= */
+var currentUser = localStorage.getItem(LS_USER) || '书友';
+var posts = [];
+var customBooks = [];
+var detailId = null;      // 当前打开的帖子 id
+var deletingReplyId = null; // 二次确认中的回帖 id
+var deletingPostId = null;  // 二次确认中的帖子 id
+var deletingBookId = null;  // 二次确认中的书 id
+
+/* ================= 工具 ================= */
+function loadAll() {
+  try { posts = JSON.parse(localStorage.getItem(LS_POSTS(currentUser))) || []; } catch (e) { posts = []; }
+  try { customBooks = JSON.parse(localStorage.getItem(LS_BOOKS(currentUser))) || []; } catch (e) { customBooks = []; }
+}
+function savePosts() { localStorage.setItem(LS_POSTS(currentUser), JSON.stringify(posts)); }
+function saveBooks() { localStorage.setItem(LS_BOOKS(currentUser), JSON.stringify(customBooks)); }
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function fmtTime(ts) {
+  var d = new Date(ts);
+  var now = new Date();
+  var sameDay = d.toDateString() === now.toDateString();
+  var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+  var hm = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  if (sameDay) return '今天 ' + hm;
+  return (d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + hm;
+}
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { el.classList.remove('show'); }, 2200);
+}
+function allBooks() { return BUILTIN_BOOKS.concat(customBooks); }
+function findBook(id) {
+  var all = allBooks();
+  for (var i = 0; i < all.length; i++) { if (all[i].id === id) return all[i]; }
+  return null;
+}
+function uid(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ================= 推荐匹配 ================= */
+function matchBooks(text) {
+  var t = String(text || '').toLowerCase();
+  var all = allBooks();
+  var picked = [];
+  var seen = {};
+  // 1) 文中直接点名的书（按书名精确命中）优先推荐
+  for (var i = 0; i < all.length; i++) {
+    var b = all[i];
+    if (t.indexOf(b.name.toLowerCase()) >= 0) {
+      picked.push({ book: b, words: ['《' + b.name + '》'], tag: '' });
+      seen[b.id] = 1;
+    }
+  }
+  // 2) 标签关键词匹配：按命中词数排序，每个标签最多推 1 本（保证类型多样性）
+  var hits = {};
+  var tags = Object.keys(KEYWORDS);
+  for (var n = 0; n < tags.length; n++) {
+    var tag = tags[n];
+    var words = [];
+    var kws = KEYWORDS[tag];
+    for (var j = 0; j < kws.length; j++) {
+      if (t.indexOf(kws[j].toLowerCase()) >= 0) words.push(kws[j]);
+    }
+    if (words.length) hits[tag] = words;
+  }
+  var hitTags = Object.keys(hits).sort(function (a, b) { return hits[b].length - hits[a].length; });
+  for (var k = 0; k < hitTags.length && picked.length < 3; k++) {
+    var ht = hitTags[k];
+    for (var m = 0; m < all.length; m++) {
+      var bb = all[m];
+      if (bb.tags.indexOf(ht) >= 0 && !seen[bb.id]) {
+        picked.push({ book: bb, words: hits[ht], tag: ht });
+        seen[bb.id] = 1;
+        break;
+      }
+    }
+  }
+  return picked.slice(0, 3);
+}
+
+function postText(p) {
+  var parts = [p.title, p.content];
+  (p.replies || []).forEach(function (r) { parts.push(r.content); });
+  return parts.join(' ');
+}
+
+/* ================= 弹层 ================= */
+function openModal(html) {
+  var root = document.getElementById('modalRoot');
+  root.innerHTML = '<div class="mask" id="mask"><div class="modal" id="modalBox">' + html + '</div></div>';
+  var mask = document.getElementById('mask');
+  mask.addEventListener('click', function (e) {
+    if (e.target === mask) closeModal();
+  });
+  document.addEventListener('keydown', onModalKey);
+  return document.getElementById('modalBox');
+}
+function closeModal() {
+  document.getElementById('modalRoot').innerHTML = '';
+  document.removeEventListener('keydown', onModalKey);
+  deletingReplyId = null; deletingPostId = null; deletingBookId = null;
+}
+function onModalKey(e) { if (e.key === 'Escape') closeModal(); }
+
+/* ================= 渲染：帖子列表 ================= */
+function renderPosts() {
+  var q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  var list = posts.slice().sort(function (a, b) { return b.time - a.time; });
+  if (q) {
+    list = list.filter(function (p) {
+      var hay = (p.title + ' ' + p.content + ' ' + (p.tags||[]).join(' ') + ' ' + p.author).toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+  }
+  var box = document.getElementById('postList');
+  if (!list.length) {
+    box.innerHTML = '<div class="empty">' + (posts.length ? '没有匹配的帖子' : '茶馆还空着，点右上角「✍️ 发帖」聊聊最近看的小说吧') + '</div>';
+    return;
+  }
+  var html = '';
+  list.forEach(function (p) {
+    var tags = (p.tags || []).map(function (tg) { return '<span class="badge">#' + esc(tg) + '</span>'; }).join('');
+    var recCount = matchBooks(postText(p)).length;
+    html += '<div class="post-card" data-id="' + p.id + '">'
+      + '<div class="row1"><div class="ptitle">' + esc(p.title) + '</div>'
+      + '<span class="badge book" title="相关推荐">📚' + recCount + '</span></div>'
+      + '<div class="meta"><span>👤 ' + esc(p.author) + '</span><span>🕐 ' + fmtTime(p.time) + '</span>'
+      + '<span class="badge reply">💬 ' + (p.replies||[]).length + '</span></div>'
+      + '<div class="summary">' + esc(p.content) + '</div>'
+      + '<div class="foot">' + tags + '</div>'
+      + '</div>';
+  });
+  box.innerHTML = html;
+  box.querySelectorAll('.post-card').forEach(function (el) {
+    el.addEventListener('click', function () { openDetail(el.getAttribute('data-id')); });
+  });
+}
+
+/* ================= 渲染：详情 ================= */
+function openDetail(id) {
+  var p = null;
+  for (var i = 0; i < posts.length; i++) { if (posts[i].id === id) { p = posts[i]; break; } }
+  if (!p) { toast('帖子不存在'); renderPosts(); return; }
+  detailId = id;
+  document.getElementById('postList').style.display = 'none';
+  document.getElementById('searchInput').parentElement.style.display = 'none';
+  document.getElementById('detailView').style.display = 'block';
+  document.getElementById('dTitle').textContent = p.title;
+  renderDetailHead(p);
+  document.getElementById('dContent').textContent = p.content;
+  renderRecs(p);
+  renderReplies(p);
+  document.getElementById('replyInput').value = '';
+  window.scrollTo(0, 0);
+}
+function closeDetail() {
+  detailId = null;
+  document.getElementById('detailView').style.display = 'none';
+  document.getElementById('postList').style.display = '';
+  document.getElementById('searchInput').parentElement.style.display = '';
+  renderPosts();
+}
+
+function renderRecs(p) {
+  var box = document.getElementById('recGrid');
+  var sub = document.getElementById('recSub');
+  var manual = (p.picked || []).map(findBook).filter(Boolean);
+  var auto = matchBooks(postText(p));
+  var autoIds = {};
+  auto.forEach(function (r) { autoIds[r.book.id] = 1; });
+  var manualOnly = manual.filter(function (b) { return !autoIds[b.id]; });
+
+  var cards = '';
+  manualOnly.forEach(function (b) {
+    cards += bookCardHtml(b, '手动关联', true);
+  });
+  auto.forEach(function (r) {
+    cards += bookCardHtml(r.book, '自动匹配：文中提到「' + r.words.join('」「') + '」', false);
+  });
+  if (!cards) {
+    box.innerHTML = '<div class="empty" style="padding:30px">这篇还没有匹配到书——可以回复时聊聊类型、或者去书库加几本书。</div>';
+    sub.textContent = '';
+    return;
+  }
+  box.innerHTML = cards;
+  sub.textContent = '共 ' + (manualOnly.length + auto.length) + ' 本';
+}
+
+function bookCardHtml(b, src, isManual) {
+  var tags = (b.tags||[]).map(function (tg) { return '<span class="badge">#' + esc(tg) + '</span>'; }).join('');
+  return '<div class="book-card">'
+    + '<div class="btitle">' + esc(b.name) + '</div>'
+    + '<div class="bauthor">' + esc(b.author) + '</div>'
+    + '<div class="btags">' + tags + '</div>'
+    + '<div class="bintro">' + esc(b.intro) + '</div>'
+    + '<div class="bwhy"><span class="src">' + (isManual ? '📌 手动关联' : '✨ ' + esc(src)) + '</span>' + esc(b.why) + '</div>'
+    + '</div>';
+}
+
+function renderReplies(p) {
+  var box = document.getElementById('replyList');
+  var replies = p.replies || [];
+  document.getElementById('replyCount').textContent = replies.length + ' 条回复';
+  if (!replies.length) {
+    box.innerHTML = '<div class="empty" style="padding:24px">还没有回复，来抢沙发。</div>';
+    return;
+  }
+  var html = '';
+  replies.forEach(function (r) {
+    var isMine = r.author === currentUser;
+    var delBtn = isMine
+      ? '<button class="btn small danger" data-replydel="' + r.id + '">'
+        + (deletingReplyId === r.id ? '确认删除？' : '删除') + '</button>'
+      : '';
+    html += '<div class="reply-card">'
+      + '<div class="rmeta"><span>👤 ' + esc(r.author) + '</span><span>🕐 ' + fmtTime(r.time) + '</span>'
+      + '<span style="flex:1"></span>' + delBtn + '</div>'
+      + '<div class="rcontent">' + esc(r.content) + '</div></div>';
+  });
+  box.innerHTML = html;
+  box.querySelectorAll('[data-replydel]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var rid = btn.getAttribute('data-replydel');
+      if (deletingReplyId !== rid) { deletingReplyId = rid; renderReplies(p); return; }
+      deletingReplyId = null;
+      p.replies = (p.replies||[]).filter(function (x) { return x.id !== rid; });
+      savePosts(); renderReplies(p); renderPosts(); toast('回复已删除');
+    });
+  });
+}
+
+/* ================= 发帖 ================= */
+function openNewPost() {
+  var box = openModal(
+    '<button class="modal-close" id="mClose">✕</button>'
+    + '<h3>✍️ 发新帖</h3>'
+    + '<label>标题</label><input type="text" id="npTitle" maxlength="60" placeholder="想聊什么？比如：求推荐烧脑的推理小说">'
+    + '<label>内容</label><textarea id="npContent" maxlength="2000" placeholder="展开聊聊你的想法、感受、问题…（提到类型词会自动推荐书）"></textarea>'
+    + '<label>标签（可选，用逗号分隔）</label><input type="text" id="npTags" placeholder="如：推理, 科幻">'
+    + '<label>手动关联书籍（可选，勾选要挂在帖上的书）</label>'
+    + '<input type="text" id="npPickSearch" placeholder="🔍 搜索书名…" style="margin-bottom:6px">'
+    + '<div class="pick-list" id="npPickList"></div>'
+    + '<div class="modal-actions"><button class="btn" id="npCancel">取消</button><button class="btn primary" id="npSubmit">发布</button></div>'
+  );
+  document.getElementById('mClose').addEventListener('click', closeModal);
+  document.getElementById('npCancel').addEventListener('click', closeModal);
+  document.getElementById('npSubmit').addEventListener('click', submitPost);
+  renderPickList('', []);
+  document.getElementById('npPickSearch').addEventListener('input', function () {
+    renderPickList(this.value.trim(), []);
+  });
+  setTimeout(function () { document.getElementById('npTitle').focus(); }, 50);
+}
+
+function renderPickList(q, picked) {
+  var all = allBooks();
+  var list = all.filter(function (b) {
+    if (!q) return true;
+    return (b.name + b.author + (b.tags||[]).join(' ')).toLowerCase().indexOf(q.toLowerCase()) >= 0;
+  });
+  var box = document.getElementById('npPickList');
+  if (!box) return;
+  if (!list.length) { box.innerHTML = '<div class="muted" style="padding:10px;font-size:12px">没有匹配的书</div>'; return; }
+  box.innerHTML = list.map(function (b) {
+    var ck = picked.indexOf(b.id) >= 0 ? 'checked' : '';
+    return '<label class="pick-item"><input type="checkbox" value="' + b.id + '" ' + ck + '>'
+      + '<span>' + esc(b.name) + '</span><span class="pt">' + esc(b.author) + ' · ' + (b.tags||[]).join('/') + '</span></label>';
+  }).join('');
+}
+
+function submitPost() {
+  var title = document.getElementById('npTitle').value.trim();
+  var content = document.getElementById('npContent').value.trim();
+  if (!title) { toast('标题不能为空'); return; }
+  if (!content) { toast('内容不能为空'); return; }
+  var tags = document.getElementById('npTags').value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5);
+  var picked = [];
+  document.querySelectorAll('#npPickList input:checked').forEach(function (cb) { picked.push(cb.value); });
+  var p = {
+    id: uid('p_'),
+    title: title,
+    content: content,
+    tags: tags,
+    author: currentUser,
+    time: Date.now(),
+    replies: [],
+    picked: picked
+  };
+  posts.unshift(p);
+  savePosts();
+  closeModal();
+  renderPosts();
+  toast('发布成功');
+}
+
+/* ================= 回帖 ================= */
+function submitReply() {
+  if (!detailId) return;
+  var content = document.getElementById('replyInput').value.trim();
+  if (!content) { toast('写点内容再回复'); return; }
+  var p = null;
+  for (var i = 0; i < posts.length; i++) { if (posts[i].id === detailId) { p = posts[i]; break; } }
+  if (!p) return;
+  p.replies.push({ id: uid('r_'), author: currentUser, content: content, time: Date.now() });
+  savePosts();
+  renderReplies(p);
+  renderRecs(p);
+  document.getElementById('replyInput').value = '';
+  toast('回复成功');
+}
+
+/* ================= 书库 ================= */
+var libFilter = '';
+function openLibrary() {
+  libFilter = '';
+  var box = openModal(
+    '<button class="modal-close" id="mClose">✕</button>'
+    + '<div class="row-between"><h3>📖 书库</h3><button class="btn small primary" id="btnAddBook">+ 添加新书</button></div>'
+    + '<input type="text" id="libSearch" placeholder="🔍 搜索书名 / 作者 / 标签…" style="margin:12px 0">'
+    + '<div class="lib-filters" id="libFilters"></div>'
+    + '<div class="lib-grid" id="libGrid"></div>'
+    + '<div id="addBookForm" style="display:none;margin-top:16px;border-top:1px solid var(--border-color);padding-top:10px">'
+    + '<label>书名</label><input type="text" id="abName" placeholder="如：长安的荔枝">'
+    + '<label>作者</label><input type="text" id="abAuthor" placeholder="如：马伯庸">'
+    + '<label>简介（一句话）</label><textarea id="abIntro" placeholder="这本书讲了什么…"></textarea>'
+    + '<label>标签（逗号分隔，用于自动匹配）</label><input type="text" id="abTags" placeholder="如：历史, 悬疑">'
+    + '<label>推荐语（为什么值得读）</label><textarea id="abWhy" placeholder="看完你会收获…"></textarea>'
+    + '<div class="modal-actions"><button class="btn" id="abCancel">取消</button><button class="btn primary" id="abSave">保存</button></div>'
+    + '</div>'
+  );
+  document.getElementById('mClose').addEventListener('click', closeModal);
+  document.getElementById('btnAddBook').addEventListener('click', function () {
+    document.getElementById('addBookForm').style.display = 'block';
+  });
+  document.getElementById('abCancel').addEventListener('click', function () {
+    document.getElementById('addBookForm').style.display = 'none';
+  });
+  document.getElementById('abSave').addEventListener('click', saveNewBook);
+  document.getElementById('libSearch').addEventListener('input', renderLibrary);
+  renderLibrary();
+}
+
+function renderLibrary() {
+  var q = (document.getElementById('libSearch').value || '').trim().toLowerCase();
+  var all = allBooks();
+  // 筛选 chips
+  var tags = ['全部'].concat(Object.keys(KEYWORDS));
+  var chipsHtml = tags.map(function (tg) {
+    var active = (libFilter === tg) || (libFilter === '' && tg === '全部');
+    return '<button class="fchip' + (active ? ' active' : '') + '" data-tag="' + tg + '">' + tg + '</button>';
+  }).join('');
+  document.getElementById('libFilters').innerHTML = chipsHtml;
+  document.querySelectorAll('#libFilters .fchip').forEach(function (ch) {
+    ch.addEventListener('click', function () {
+      libFilter = ch.getAttribute('data-tag') === '全部' ? '' : ch.getAttribute('data-tag');
+      renderLibrary();
+    });
+  });
+
+  var list = all.filter(function (b) {
+    if (libFilter && (b.tags||[]).indexOf(libFilter) < 0) return false;
+    if (q) {
+      var hay = (b.name + b.author + (b.tags||[]).join(' ') + b.intro).toLowerCase();
+      if (hay.indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+  var grid = document.getElementById('libGrid');
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty" style="padding:24px;grid-column:1/-1">没有匹配的书</div>';
+    return;
+  }
+  grid.innerHTML = list.map(function (b) {
+    var delBtn = '';
+    if (b.id.indexOf('c_') === 0) {
+      delBtn = '<button class="btn small danger" data-bookdel="' + b.id + '">'
+        + (deletingBookId === b.id ? '确认删除？' : '删除') + '</button>';
+    }
+    return '<div class="book-card">'
+      + '<div class="row-between"><div class="btitle">' + esc(b.name) + '</div>'
+      + (b.builtin ? '<span class="badge" style="font-size:10px">内置</span>' : '') + '</div>'
+      + '<div class="bauthor">' + esc(b.author) + '</div>'
+      + '<div class="btags">' + (b.tags||[]).map(function (tg) { return '<span class="badge">#' + esc(tg) + '</span>'; }).join('') + '</div>'
+      + '<div class="bintro">' + esc(b.intro) + '</div>'
+      + (b.why ? '<div class="bwhy">' + esc(b.why) + '</div>' : '')
+      + (delBtn ? '<div style="margin-top:10px">' + delBtn + '</div>' : '')
+      + '</div>';
+  }).join('');
+  grid.querySelectorAll('[data-bookdel]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var bid = btn.getAttribute('data-bookdel');
+      if (deletingBookId !== bid) { deletingBookId = bid; renderLibrary(); return; }
+      deletingBookId = null;
+      customBooks = customBooks.filter(function (b) { return b.id !== bid; });
+      saveBooks();
+      renderLibrary();
+      toast('书已删除');
+    });
+  });
+}
+
+function saveNewBook() {
+  var name = document.getElementById('abName').value.trim();
+  var author = document.getElementById('abAuthor').value.trim();
+  var intro = document.getElementById('abIntro').value.trim();
+  var tags = document.getElementById('abTags').value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 6);
+  var why = document.getElementById('abWhy').value.trim();
+  if (!name) { toast('书名不能为空'); return; }
+  if (!author) { toast('作者不能为空'); return; }
+  customBooks.push({ id: uid('c_'), name: name, author: author, tags: tags, intro: intro, why: why, builtin: false });
+  saveBooks();
+  document.getElementById('addBookForm').style.display = 'none';
+  document.getElementById('abName').value = '';
+  document.getElementById('abAuthor').value = '';
+  document.getElementById('abIntro').value = '';
+  document.getElementById('abTags').value = '';
+  document.getElementById('abWhy').value = '';
+  renderLibrary();
+  toast('书已加入书库');
+}
+
+/* ================= 用户切换 ================= */
+function openUserModal() {
+  var box = openModal(
+    '<button class="modal-close" id="mClose">✕</button>'
+    + '<h3>👤 切换用户</h3>'
+    + '<p class="muted" style="font-size:12px;margin-bottom:6px">每个用户的数据独立保存在本机浏览器（换电脑不互通）。</p>'
+    + '<label>用户名</label><input type="text" id="userInput" maxlength="20" value="' + esc(currentUser) + '">'
+    + '<div class="modal-actions"><button class="btn" id="uCancel">取消</button><button class="btn primary" id="uSave">切换</button></div>'
+  );
+  document.getElementById('mClose').addEventListener('click', closeModal);
+  document.getElementById('uCancel').addEventListener('click', closeModal);
+  document.getElementById('uSave').addEventListener('click', function () {
+    var name = document.getElementById('userInput').value.trim();
+    if (!name) { toast('用户名不能为空'); return; }
+    currentUser = name;
+    localStorage.setItem(LS_USER, name);
+    loadAll();
+    closeModal();
+    document.getElementById('userChipName').textContent = currentUser;
+    renderPosts();
+    toast('已切换到：' + currentUser);
+  });
+  setTimeout(function () {
+    var inp = document.getElementById('userInput');
+    inp.focus(); inp.select();
+  }, 50);
+}
+
+/* ================= 删除帖子 ================= */
+function deleteCurrentPost() {
+  if (!detailId) return;
+  var p = null;
+  for (var i = 0; i < posts.length; i++) { if (posts[i].id === detailId) { p = posts[i]; break; } }
+  if (!p) return;
+  if (p.author !== currentUser) { toast('只能删除自己的帖子'); return; }
+  if (deletingPostId !== detailId) {
+    deletingPostId = detailId;
+    renderDetailHead(p);
+    toast('再次点击「删除」确认');
+    return;
+  }
+  posts = posts.filter(function (x) { return x.id !== detailId; });
+  savePosts();
+  deletingPostId = null;
+  closeDetail();
+  renderPosts();
+  toast('帖子已删除');
+}
+function renderDetailHead(p) {
+  var isMine = p.author === currentUser;
+  document.getElementById('dMeta').innerHTML =
+    '<span>👤 ' + esc(p.author) + '</span><span>🕐 ' + fmtTime(p.time) + '</span>'
+    + (p.tags||[]).map(function (tg) { return '<span class="badge">#' + esc(tg) + '</span>'; }).join('')
+    + (isMine ? '<button class="btn small danger" id="btnDelPost">' + (deletingPostId === p.id ? '确认删除？' : '删除') + '</button>' : '');
+  var btn = document.getElementById('btnDelPost');
+  if (btn) btn.addEventListener('click', deleteCurrentPost);
+}
+
+/* ================= 事件绑定 ================= */
+function bindEvents() {
+  document.getElementById('userChip').addEventListener('click', openUserModal);
+  document.getElementById('btnLibrary').addEventListener('click', openLibrary);
+  document.getElementById('btnNewPost').addEventListener('click', openNewPost);
+  document.getElementById('btnReply').addEventListener('click', submitReply);
+  document.getElementById('btnBack').addEventListener('click', closeDetail);
+  document.getElementById('searchInput').addEventListener('input', renderPosts);
+  document.getElementById('replyInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReply(); }
+  });
+}
+
+/* ================= 初始化 ================= */
+function init() {
+  loadAll();
+  document.getElementById('userChipName').textContent = currentUser;
+  bindEvents();
+  renderPosts();
+}
+init();
+</script>
+</body>
+</html>

@@ -132,6 +132,14 @@
             "path": "/tools/pages/tools/html-ppt.html",
             "tag": "Tools",
             "description": "HTML 做的全屏 PPT：12 页数据汇报，图表动画全可交互，键盘翻页，手机也能看。"
+        },
+        {
+            "id": "novel-teahouse",
+            "name": "小说茶馆",
+            "icon": "📚",
+            "path": "/tools/pages/tools/novel-teahouse.html",
+            "tag": "Tools",
+            "description": "小说讨论与推书：发帖聊书、根据讨论内容自动匹配推荐、书库可自己维护"
         }
     ]
 }
